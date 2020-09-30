@@ -13,27 +13,11 @@ class Hub:
 
     manufacturer = "SIRO"
 
-    def __init__(self, hass, host, siro_bridge):
+    def __init__(self, hass, host, siro_bridge=None):
         """Init dummy hub."""
         self._host = host
         self._hass = hass
         self._bridge = siro_bridge
-        self._name = None
-        self._id = None
-        self.rollers = None
-        self.online = None
-
-    @property
-    def hub_id(self):
-        """ID for dummy hub."""
-        return self._id
-
-    async def init_bridge(self, key: str):
-        """
-        docstring
-        """
-        self._host = host
-        self._hass = hass
         self._name = host
         self._id = host.lower()
         self.rollers = [
@@ -41,8 +25,12 @@ class Hub:
             Roller(f"{self._id}_2", f"{self._name} 2", self),
             Roller(f"{self._id}_3", f"{self._name} 3", self),
         ]
-        self.online = True
-        raise NotImplementedError
+        self.online = None
+
+    @property
+    def hub_id(self):
+        """ID for dummy hub."""
+        return self._id
 
     async def test_connection(self):
         """Test connectivity to the Dummy hub is OK."""
