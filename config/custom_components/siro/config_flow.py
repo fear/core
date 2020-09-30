@@ -7,6 +7,7 @@ from homeassistant import config_entries, core, exceptions
 
 from .const import DOMAIN
 from .hub import Hub
+from .siro_conn.siro import Connector, Bridge
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,10 +38,13 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     if len(data["host"]) < 3:
         raise InvalidHost
 
-    hub = Hub(hass, data["host"])
+    bridge = Connector.bridge_factory('30b9217c-6d18-4d')
+
     # The dummy hub provides a `test_connection` method to ensure it's working
     # as expected
-    result = await hub.test_connection()
+    logging.warning(data)
+
+    result = bridge.validate_key()
     if not result:
         # If there is an error, raise an exception to notify HA that there was a
         # problem. The UI will also show there was a problem
