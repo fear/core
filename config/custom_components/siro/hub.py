@@ -22,9 +22,10 @@ class Hub:
         self._bridge = siro_bridge
         self._name = host
         self._id = host.lower()
+        self.blinds = []
 
         for device in self._bridge.get_devices():
-            SiroBlind(device.get_mac(), device.get_name(), self, device),
+            self.blinds.append(SiroBlind(device.get_mac(), device.get_name(), self, device))
 
         self.online = self._bridge.validate_key()
 

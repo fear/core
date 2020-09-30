@@ -24,9 +24,9 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # to HA. Note these are all added to a list, so async_add_devices can be
     # called just once.
     new_devices = []
-    for roller in hub.rollers:
-        roller_entity = SiroCover(roller)
-        new_devices.append(roller_entity)
+    for blind in hub.blinds:
+        blind_entity = SiroCover(blind)
+        new_devices.append(blind_entity)
     # If we have any new devices, add them
     if new_devices:
         async_add_devices(new_devices)
@@ -39,17 +39,17 @@ class SiroCover(CoverEntity):
     """Representation of a dummy Cover."""
 
     # Our dummy class is PUSH, so we tell HA that it should not be polled
-    should_poll = False
+    # should_poll = False
     # The supported features of a cover are done using a bitmask. Using the constants
     # imported above, we can tell HA the features that are supported by this entity.
     # If the supported features were dynamic (ie: different depending on the external
     # device it connected to), then this should be function with an @property decorator.
     supported_features = SUPPORT_SET_POSITION | SUPPORT_OPEN | SUPPORT_CLOSE
 
-    def __init__(self, roller):
+    def __init__(self, blind):
         """Initialize the sensor."""
         # Usual setup is done here. Callbacks are added in async_added_to_hass.
-        self._roller = roller
+        self._blind = blind
 
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
@@ -59,12 +59,12 @@ class SiroCover(CoverEntity):
         # called where ever there are changes.
         # The call back registration is done once this entity is registered with HA
         # (rather than in the __init__)
-        self._roller.register_callback(self.async_write_ha_state)
+        self._blind.register_callback(self.async_write_ha_state)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
-        self._roller.remove_callback(self.async_write_ha_state)
+        self._blind.remove_callback(self.async_write_ha_state)
 
     # A unique_id for this entity with in this domain. This means for example if you
     # have a sensor on this cover, you must ensure the value returned is unique,
@@ -74,7 +74,7 @@ class SiroCover(CoverEntity):
     @property
     def unique_id(self):
         """Return Unique ID string."""
-        return f"{self._roller.roller_id}_cover"
+        return f"{self._blind.roller_id}_cover"
 
     # Information about the devices that is partially visible in the UI.
     # The most critical thing here is to give this entity a name so it is displayed
@@ -99,12 +99,12 @@ class SiroCover(CoverEntity):
     def device_info(self):
         """Information about this entity/device."""
         return {
-            "identifiers": {(DOMAIN, self._roller.roller_id)},
+            "identifiers": {(DOMAIN, self._blind.roller_id)},
             # If desired, the name for the device could be different to the entity
             "name": self.name,
-            "sw_version": self._roller.firmware_version,
-            "model": self._roller.model,
-            "manufacturer": self._roller.hub.manufacturer,
+            "sw_version": self._blind.firmware_version,
+            "model": self._blind.model,
+            "manufacturer": self._blind.hub.manufacturer,
         }
 
     # This is the name for this *entity*, the "name" attribute from "device_info"
@@ -113,14 +113,14 @@ class SiroCover(CoverEntity):
     @property
     def name(self):
         """Return the name of the roller."""
-        return self._roller.name
+        return self._blind.name
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will refelect this.
     @property
     def available(self) -> bool:
         """Return True if roller and hub is available."""
-        return self._roller.online and self._roller.hub.online
+        return self._blind.online and self._blind.hub.online
 
     # The follwing properties are how HA knows the current state of the device.
     # These must return a value from memory, not make a live query to the device/hub
@@ -133,33 +133,33 @@ class SiroCover(CoverEntity):
     @property
     def current_cover_position(self):
         """Return the current position of the cover."""
-        return self._roller.position
+        return self._blind.position
 
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        return self._roller.position == 0
+        return self._blind.position == 0
 
     @property
     def is_closing(self):
         """Return if the cover is closing or not."""
-        return self._roller.moving < 0
+        return self._blind.moving < 0
 
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
-        return self._roller.moving > 0
+        return self._blind.moving > 0
 
     # These methods allow HA to tell the actual device what to do. In this case, move
     # the cover to the desired position, or open and close it all the way.
     async def async_open_cover(self, **kwargs):
         """Open the cover."""
-        await self._roller.set_position(100)
+        await self._blind.set_position(100)
 
     async def async_close_cover(self, **kwargs):
         """Close the cover."""
-        await self._roller.set_position(0)
+        await self._blind.set_position(0)
 
     async def async_set_cover_position(self, **kwargs):
         """Close the cover."""
-        await self._roller.set_position(kwargs[ATTR_POSITION])
+        await self._blind.set_position(kwargs[ATTR_POSITION])
