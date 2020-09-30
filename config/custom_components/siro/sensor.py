@@ -14,8 +14,9 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import Entity
 from .const import DOMAIN
 
+
 # See cover.py for more details.
-# Note how both entities for each roller sensor (battry and illuminance) are added at
+# Note how both entities for each blind sensor (battery and illuminance) are added at
 # the same time to the same list. This way only a single async_add_devices call is
 # required.
 async def async_setup_entry(hass, config_entry, async_add_devices):
@@ -23,8 +24,8 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     hub = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for roller in hub.rollers:
-        new_devices.append(BatterySensor(roller))
+    for blind in hub.blinds:
+        new_devices.append(BatterySensor(blind))
     if new_devices:
         async_add_devices(new_devices)
 
@@ -37,9 +38,9 @@ class SensorBase(Entity):
 
     should_poll = False
 
-    def __init__(self, roller):
+    def __init__(self, blind):
         """Initialize the sensor."""
-        self._roller = roller
+        self._blind = blind
 
     # To link this entity to the cover device, this property must return an
     # identifiers value matching that used in the cover, but no other information such
@@ -48,24 +49,24 @@ class SensorBase(Entity):
     @property
     def device_info(self):
         """Return information to link this entity with the correct device."""
-        return {"identifiers": {(DOMAIN, self._roller.roller_id)}}
+        return {"identifiers": {(DOMAIN, self._blind.blind_id)}}
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will refelect this.
     @property
     def available(self) -> bool:
-        """Return True if roller and hub is available."""
-        return self._roller.online and self._roller.hub.online
+        """Return True if blind and hub is available."""
+        return self._blind.online and self._blind.hub.online
 
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
         # Sensors should also register callbacks to HA when their state changes
-        self._roller.register_callback(self.async_write_ha_state)
+        self._blind.register_callback(self.async_write_ha_state)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
-        self._roller.remove_callback(self.async_write_ha_state)
+        self._blind.remove_callback(self.async_write_ha_state)
 
 
 class BatterySensor(SensorBase):
@@ -76,9 +77,9 @@ class BatterySensor(SensorBase):
     # https://developers.home-assistant.io/docs/core/entity/sensor
     device_class = DEVICE_CLASS_BATTERY
 
-    def __init__(self, roller):
+    def __init__(self, blind):
         """Initialize the sensor."""
-        super().__init__(roller)
+        super().__init__(blind)
         self._state = random.randint(0, 100)
 
     # As per the sensor, this must be a unique value within this domain. This is done
@@ -86,14 +87,14 @@ class BatterySensor(SensorBase):
     @property
     def unique_id(self):
         """Return Unique ID string."""
-        return f"{self._roller.roller_id}_battery"
+        return f"{self._blind.blind_id}_battery"
 
     # The value of this sensor. As this is a DEVICE_CLASS_BATTERY, this value must be
     # the battery level as a percentage (between 0 and 100)
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._roller.battery_level
+        return self._blind.battery_level
 
     # The unit of measurement for this entity. As it's a DEVICE_CLASS_BATTERY, this
     # should be PERCENTAGE. A number of units are supported by HA, for some
@@ -108,4 +109,4 @@ class BatterySensor(SensorBase):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{self._roller.name} Battery"
+        return f"{self._blind.name} Battery"
