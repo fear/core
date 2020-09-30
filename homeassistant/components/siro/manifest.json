@@ -1,0 +1,12 @@
+{
+  "domain": "siro",
+  "name": "SIRO",
+  "config_flow": false,
+  "documentation": "https://www.home-assistant.io/integrations/siro",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": ["@sillyfrog"]
+}
