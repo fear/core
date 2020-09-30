@@ -41,15 +41,16 @@ class Hub:
 class SiroBlind:
     """Dummy siro_blind (device for HA) for Hello World example."""
 
-    def __init__(self, siro_blind_id, name, hub, device: Device):
+    def __init__(self, siro_blind_id, name, hub, device: RadioMotor):
         """Init dummy siro_blind."""
         self._id = siro_blind_id
         self.hub = hub
+        self.device = device
         self.name = name
         self._callbacks = set()
         self._loop = asyncio.get_event_loop()
-        self._target_position = 100
-        self._current_position = 100
+        self._target_position = 0
+        self._current_position = self.device.get_status()['data']['currentPosition']
         # Reports if the siro_blind is moving up or down.
         # >0 is up, <0 is down. This very much just for demonstration.
         self.moving = 0
@@ -76,11 +77,12 @@ class SiroBlind:
         """
         self._target_position = position
 
+        self.device.position(self._target_position)
         # Update the moving status, and broadcast the update
-        self.moving = position - 50
-        await self.publish_updates()
-
-        self._loop.create_task(self.delayed_update())
+        # self.moving = position - 50
+        # await self.publish_updates()
+        #
+        # self._loop.create_task(self.delayed_update())
 
     async def delayed_update(self):
         """Publish updates, with a random delay to emulate interaction with device."""
@@ -97,7 +99,7 @@ class SiroBlind:
         self._callbacks.discard(callback)
 
     # In a real implementation, this library would call it's call backs when it was
-    # notified of any state changeds for the relevant device.
+    # notified of any state changed for the relevant device.
     async def publish_updates(self):
         """Schedule call all registered callbacks."""
         self._current_position = self._target_position
@@ -107,12 +109,11 @@ class SiroBlind:
     @property
     def online(self):
         """SiroBlind is online."""
-        # The dummy siro_blind is offline about 10% of the time. Returns True if online,
-        # False if offline.
         return True
 
     @property
     def battery_level(self):
         """Battery level as a percentage."""
-        return random.randint(30, 100)
+        battery_level = self.device.get_status()['data']['batteryLevel']/10
+        return battery_level
 
