@@ -2,7 +2,6 @@ import json
 import logging
 
 from .const import *
-
 from abc import ABC
 
 
@@ -21,7 +20,7 @@ class Device(ABC):
             return logger_
         else:
             logger = logging.getLogger(__name__)
-            logger.setLevel(logging.DEBUG)
+            logger.setLevel(LOG_LEVEL)
             file_handler = logging.FileHandler(LOG_FILE)
             formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
             file_handler.setFormatter(formatter)

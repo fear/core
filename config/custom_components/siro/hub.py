@@ -3,29 +3,29 @@
 # The PyPI package needs to be included in the `requirements` section of manifest.json
 # See https://developers.home-assistant.io/docs/creating_integration_manifest
 # for more information.
-# This dummy hub always returns 3 rollers.
+# This dummy hub always returns 3 siro_blinds.
 import asyncio
 import random
 
+from .siro_conn.siro import Bridge, RadioMotor, Device
 
 class Hub:
     """Dummy hub for Hello World example."""
 
     manufacturer = "SIRO"
 
-    def __init__(self, hass, host, siro_bridge=None):
+    def __init__(self, hass, host, siro_bridge: Bridge):
         """Init dummy hub."""
         self._host = host
         self._hass = hass
         self._bridge = siro_bridge
         self._name = host
         self._id = host.lower()
-        self.rollers = [
-            Roller(f"{self._id}_1", f"{self._name} 1", self),
-            Roller(f"{self._id}_2", f"{self._name} 2", self),
-            Roller(f"{self._id}_3", f"{self._name} 3", self),
-        ]
-        self.online = None
+
+        for device in self._bridge.get_devices():
+            SiroBlind(device.get_mac(), device.get_name(), self, device),
+
+        self.online = self._bridge.validate_key()
 
     @property
     def hub_id(self):
@@ -34,23 +34,23 @@ class Hub:
 
     async def test_connection(self):
         """Test connectivity to the Dummy hub is OK."""
-        await asyncio.sleep(1)
+        self._bridge.
         return True
 
 
-class Roller:
-    """Dummy roller (device for HA) for Hello World example."""
+class SiroBlind:
+    """Dummy siro_blind (device for HA) for Hello World example."""
 
-    def __init__(self, rollerid, name, hub):
-        """Init dummy roller."""
-        self._id = rollerid
+    def __init__(self, siro_blind_id, name, hub, device: Device):
+        """Init dummy siro_blind."""
+        self._id = siro_blind_id
         self.hub = hub
         self.name = name
         self._callbacks = set()
         self._loop = asyncio.get_event_loop()
         self._target_position = 100
         self._current_position = 100
-        # Reports if the roller is moving up or down.
+        # Reports if the siro_blind is moving up or down.
         # >0 is up, <0 is down. This very much just for demonstration.
         self.moving = 0
 
@@ -59,13 +59,13 @@ class Roller:
         self.model = "Test Device"
 
     @property
-    def roller_id(self):
-        """Return ID for roller."""
+    def siro_blind_id(self):
+        """Return ID for siro_blind."""
         return self._id
 
     @property
     def position(self):
-        """Return position for roller."""
+        """Return position for siro_blind."""
         return self._current_position
 
     async def set_position(self, position):
@@ -89,7 +89,7 @@ class Roller:
         await self.publish_updates()
 
     def register_callback(self, callback):
-        """Register callback, called when Roller changes state."""
+        """Register callback, called when SiroBlind changes state."""
         self._callbacks.add(callback)
 
     def remove_callback(self, callback):
@@ -106,8 +106,8 @@ class Roller:
 
     @property
     def online(self):
-        """Roller is online."""
-        # The dummy roller is offline about 10% of the time. Returns True if online,
+        """SiroBlind is online."""
+        # The dummy siro_blind is offline about 10% of the time. Returns True if online,
         # False if offline.
         return True
 

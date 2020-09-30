@@ -25,7 +25,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     # called just once.
     new_devices = []
     for roller in hub.rollers:
-        roller_entity = HelloWorldCover(roller)
+        roller_entity = SiroCover(roller)
         new_devices.append(roller_entity)
     # If we have any new devices, add them
     if new_devices:
@@ -35,7 +35,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 # This entire class could be written to extend a base class to ensure common attributes
 # are kept identical/in sync. It's broken apart here between the Cover and Sensors to
 # be explicit about what is returned, and the comments outline where the overlap is.
-class HelloWorldCover(CoverEntity):
+class SiroCover(CoverEntity):
     """Representation of a dummy Cover."""
 
     # Our dummy class is PUSH, so we tell HA that it should not be polled

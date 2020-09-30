@@ -1,9 +1,11 @@
 """ Constant Declaration"""
+from logging import DEBUG, INFO, WARNING, CRITICAL, ERROR
 
 """ Constants  """
 # Config File
 CONFIGFILE_DEVICE_NAMES = 'persisted_names.json'
 LOG_FILE = 'siro_conn.log'
+LOG_LEVEL = INFO
 
 # Device Types
 RADIO_MOTOR = '10000000'
