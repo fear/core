@@ -44,7 +44,7 @@ class SiroBlind:
 
     def __init__(self, siro_blind_id, name, hub, device: RadioMotor):
         """Init dummy siro_blind."""
-        self._id = siro_blind_id
+        self.blind_id = siro_blind_id
         self.hub = hub
         self.device = device
         self.name = name

@@ -74,7 +74,7 @@ class SiroCover(CoverEntity):
     @property
     def unique_id(self):
         """Return Unique ID string."""
-        return f"{self._blind.roller_id}_cover"
+        return f"{self._blind.blind_id}_cover"
 
     # Information about the devices that is partially visible in the UI.
     # The most critical thing here is to give this entity a name so it is displayed
@@ -99,7 +99,7 @@ class SiroCover(CoverEntity):
     def device_info(self):
         """Information about this entity/device."""
         return {
-            "identifiers": {(DOMAIN, self._blind.roller_id)},
+            "identifiers": {(DOMAIN, self._blind.blind_id)},
             # If desired, the name for the device could be different to the entity
             "name": self.name,
             "sw_version": self._blind.firmware_version,
