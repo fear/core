@@ -3,6 +3,8 @@ import asyncio
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from .siro.const import *
+from .siro.siro import Device, Bridge, Connector
 
 from . import hub
 from .const import DOMAIN
@@ -27,10 +29,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Store an instance of the "connecting" class that does the work of speaking
     # with your actual devices.
 
-    #bridge = await Connector.bridge_factory('30b9217c-6d18-4d')
+    bridge = Connector.bridge_factory('30b9217c-6d18-4d')
 
     hass.data[DOMAIN][entry.entry_id] = hub.Hub(hass, entry.data["host"], bridge)
-    await hass.data[DOMAIN][entry.entry_id].init
 
     # This creates each HA object for each platform your device requires.
     # It's done by calling the `async_setup_entry` function in each platform module.
