@@ -4,7 +4,6 @@ import asyncio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .siro_conn.siro import Device, Bridge, Connector
-from .siro_conn.const import *
 
 from . import hub
 from .const import DOMAIN

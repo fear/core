@@ -1,6 +1,7 @@
 import json
-import const
 import logging
+
+from .const import *
 
 from abc import ABC
 
@@ -21,7 +22,7 @@ class Device(ABC):
         else:
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.DEBUG)
-            file_handler = logging.FileHandler(const.LOG_FILE)
+            file_handler = logging.FileHandler(LOG_FILE)
             formatter = logging.Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
@@ -29,9 +30,9 @@ class Device(ABC):
 
     def _read_name_from_file(self) -> str:
         try:
-            known_devices = json.load(open(const.CONFIGFILE_DEVICE_NAMES))
+            known_devices = json.load(open(CONFIGFILE_DEVICE_NAMES))
         except (json.decoder.JSONDecodeError, FileNotFoundError):
-            self._log.debug(f'{self._mac}: There is no File {const.CONFIGFILE_DEVICE_NAMES}. Setting name to Unknown.')
+            self._log.debug(f'{self._mac}: There is no File {CONFIGFILE_DEVICE_NAMES}. Setting name to Unknown.')
             return '-unknown-'
         else:
             for known_device in known_devices:
@@ -46,7 +47,7 @@ class Device(ABC):
 
         device_exists = False
         try:
-            known_devices = json.load(open(const.CONFIGFILE_DEVICE_NAMES))
+            known_devices = json.load(open(CONFIGFILE_DEVICE_NAMES))
         except json.decoder.JSONDecodeError:
             known_devices = []
 
@@ -61,7 +62,7 @@ class Device(ABC):
                     "name": self._name,
                 }
             )
-        name_file = open(const.CONFIGFILE_DEVICE_NAMES, 'w')
+        name_file = open(CONFIGFILE_DEVICE_NAMES, 'w')
         name_file.write(json.dumps(known_devices, indent=4))
         name_file.close()
         self._log.debug(f'{self._mac}: Name was set to "{device_name}".')
@@ -90,7 +91,7 @@ class Device(ABC):
 class Bridge(Device):
     # noinspection PyTypeChecker,PyMissingConstructor
     def __init__(self, connector, logger: logging.Logger = None, host_address_: str = '') -> None:
-        super().__init__('', const.WIFI_BRIDGE, logger)
+        super().__init__('', WIFI_BRIDGE, logger)
         self._connector = connector
         self._key = ''
         self._access_token = ''
@@ -140,7 +141,7 @@ class Bridge(Device):
 
     def _get_device_list(self) -> (dict, str):
         payload = json.dumps({
-            'msgType': const.MSG_TYPES['LIST'],
+            'msgType': MSG_TYPES['LIST'],
             'msgID': self.get_timestamp()}
         )
         return self.send_payload(payload)
@@ -167,7 +168,7 @@ class Bridge(Device):
     def get_status(self) -> dict:
         payload = json.dumps(
             {
-                "msgType": const.MSG_TYPES['WRITE'],
+                "msgType": MSG_TYPES['WRITE'],
                 "mac": self.get_mac(),
                 "deviceType": self.get_devicetype(),
                 "AccessToken": self.get_access_token(),
@@ -215,18 +216,18 @@ class Bridge(Device):
         import socket
 
         if self._host_address == '':
-            remote_ip = const.MULTICAST_GRP
+            remote_ip = MULTICAST_GRP
         else:
             remote_ip = self._host_address
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
             s.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
-            s.bind((self._callback_address, const.CALLBACK_PORT))
-            s.settimeout(const.UDP_TIMEOUT)
+            s.bind((self._callback_address, CALLBACK_PORT))
+            s.settimeout(UDP_TIMEOUT)
 
-            s.sendto(payload.encode(), (remote_ip, const.SEND_PORT))
-            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{const.SEND_PORT}: {payload}.')
+            s.sendto(payload.encode(), (remote_ip, SEND_PORT))
+            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {payload}.')
 
             data, address = s.recvfrom(1024)
             message = json.loads(data.decode('utf-8'))
@@ -242,7 +243,7 @@ class Bridge(Device):
     def load_devices(self) -> None:
         if self._number_of_devices > 0:
             for known_device in self._msg_device_list["data"]:
-                if known_device['deviceType'] == const.RADIO_MOTOR:
+                if known_device['deviceType'] == RADIO_MOTOR:
                     new_device = Connector.device_factory(
                         known_device['mac'],
                         known_device['deviceType'],
@@ -276,7 +277,7 @@ class Bridge(Device):
 
 class RadioMotor(Device):
     def __init__(self, mac: str, siro_bridge: any, logger: logging.Logger = None) -> None:
-        super().__init__(mac, const.RADIO_MOTOR, logger)
+        super().__init__(mac, RADIO_MOTOR, logger)
         self._bridge = siro_bridge
         self._type = ''
         self._operation = ''
@@ -293,14 +294,14 @@ class RadioMotor(Device):
         self.update_status(self.get_status())
 
     def _set_device(self, action: int, position: int = 0) -> dict:
-        if action == const.POSITION:
+        if action == POSITION:
             data = {'targetPosition': position}
         else:
             data = {'operation': action}
 
         payload = json.dumps(
             {
-                "msgType": const.MSG_TYPES['WRITE'],
+                "msgType": MSG_TYPES['WRITE'],
                 "mac": self.get_mac(),
                 "deviceType": self.get_devicetype(),
                 "AccessToken": self._bridge.get_access_token(),
@@ -316,8 +317,8 @@ class RadioMotor(Device):
 
         if sock is None:
             s = socket(AF_INET, SOCK_DGRAM)
-            s.bind(('', const.CALLBACK_PORT))
-            mreq = inet_aton(const.MULTICAST_GRP) + inet_aton(self._bridge.get_callback_address())
+            s.bind(('', CALLBACK_PORT))
+            mreq = inet_aton(MULTICAST_GRP) + inet_aton(self._bridge.get_callback_address())
             s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
         else:
             s = sock
@@ -329,7 +330,7 @@ class RadioMotor(Device):
             return {'msgType': 'timeout'}
         data = json.loads(msg.decode('utf-8'))
 
-        if data['msgType'] == const.MSG_TYPES['REPORT']:
+        if data['msgType'] == MSG_TYPES['REPORT']:
             s.close()
             self.update_status(data)
             return data
@@ -350,15 +351,15 @@ class RadioMotor(Device):
         self._last_msg_id = status['msgID']
 
     def down(self) -> dict:
-        msg = self._set_device(const.DOWN)
-        if msg['data']['currentPosition'] == const.STATE_DOWN:
+        msg = self._set_device(DOWN)
+        if msg['data']['currentPosition'] == STATE_DOWN:
             return msg
         else:
             return self._callback_after_stop()
 
     def up(self) -> dict:
-        msg = self._set_device(const.UP)
-        if msg['data']['currentPosition'] == const.STATE_UP:
+        msg = self._set_device(UP)
+        if msg['data']['currentPosition'] == STATE_UP:
             return msg
         else:
             return self._callback_after_stop()
@@ -366,7 +367,7 @@ class RadioMotor(Device):
     def stop(self) -> dict:
         timeout = 1
 
-        msg_1 = self._set_device(const.STOP)
+        msg_1 = self._set_device(STOP)
         msg_2 = self._callback_after_stop(timeout=timeout)
         if msg_2['msgType'] == 'Report':
             return msg_2
@@ -374,13 +375,13 @@ class RadioMotor(Device):
             return msg_1
 
     def position(self, position: int) -> dict:
-        self._set_device(const.POSITION, position)
+        self._set_device(POSITION, position)
         return self._callback_after_stop()
 
     def get_status(self) -> dict:
         payload = json.dumps(
             {
-                'msgType': const.MSG_TYPES['READ'],
+                'msgType': MSG_TYPES['READ'],
                 "mac": self.get_mac(),
                 "deviceType": self.get_devicetype(),
                 'msgID': self.get_timestamp(),
@@ -390,7 +391,7 @@ class RadioMotor(Device):
         return msg[0]
 
     def get_status_set(self) -> dict:
-        return self._set_device(const.STATUS)
+        return self._set_device(STATUS)
 
 
 class Connector:
@@ -405,7 +406,7 @@ class Connector:
 
     @staticmethod
     def device_factory(mac: str, devicetype: str, bridge: Bridge, log: logging.Logger = None) -> Device:
-        if devicetype == const.RADIO_MOTOR:
+        if devicetype == RADIO_MOTOR:
             new_device = RadioMotor(mac, bridge, log)
             new_device.init()
             return new_device
@@ -426,7 +427,7 @@ class Connector:
                 index = devices.index(device) + 1
                 name = f"{device.get_name()} " \
                        f"(mac: {device.get_mac()}, " \
-                       f"type: {const.DEVICE_TYPES[device.get_devicetype()]})"
+                       f"type: {DEVICE_TYPES[device.get_devicetype()]})"
                 print(f"  {index}: {name}")
             device_selection = int(input(f"Which device do you want to control (1-{len(devices)}): ")) - 1
             print("List of possible operations: \n"
