@@ -9,8 +9,7 @@ import random
 
 from homeassistant.const import (
     DEVICE_CLASS_BATTERY,
-    PERCENTAGE,
-    DEVICE_CLASS_ILLUMINANCE,
+    PERCENTAGE
 )
 from homeassistant.helpers.entity import Entity
 from .const import DOMAIN

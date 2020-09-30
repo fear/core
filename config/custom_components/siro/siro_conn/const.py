@@ -3,7 +3,7 @@
 """ Constants  """
 # Config File
 CONFIGFILE_DEVICE_NAMES = 'persisted_names.json'
-LOG_FILE = 'siro.log'
+LOG_FILE = 'siro_conn.log'
 
 # Device Types
 RADIO_MOTOR = '10000000'
