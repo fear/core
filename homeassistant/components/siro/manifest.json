@@ -1,7 +1,7 @@
 {
   "domain": "siro",
   "name": "SIRO",
-  "config_flow": false,
+  "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/siro",
   "requirements": [],
   "ssdp": [],
