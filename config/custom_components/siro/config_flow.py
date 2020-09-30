@@ -6,8 +6,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 
 from .const import DOMAIN
-from .hub import Hub
-from .siro_conn.siro import Connector, Bridge
+from .siro_conn.siro import Bridge, Connector
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,16 +37,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     if len(data["host"]) < 3:
         raise InvalidHost
 
-    bridge = Connector.bridge_factory('30b9217c-6d18-4d')
-
-    # The dummy hub provides a `test_connection` method to ensure it's working
-    # as expected
-    logging.warning(data)
-
-    result = bridge.validate_key()
-    if not result:
-        # If there is an error, raise an exception to notify HA that there was a
-        # problem. The UI will also show there was a problem
+    if not Connector.bridge_factory('30b9217c-6d18-4d').validate_key():
         raise CannotConnect
 
     # If your PyPI package is not built with async, pass your methods
@@ -69,7 +59,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
 
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Hello World."""
+    """Handle a config flow for SIRO."""
 
     VERSION = 1
     # Pick one of the available connection classes in home assistant/config_entries.py

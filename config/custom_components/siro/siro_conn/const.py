@@ -1,5 +1,5 @@
 """ Constant Declaration"""
-from logging import DEBUG, INFO, WARNING, CRITICAL, ERROR
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
 """ Constants  """
 # Config File
@@ -33,6 +33,8 @@ ANGLE = 4
 STATUS = 5
 
 # Dictionaries
+
+
 DEVICE_TYPES = {
     '02000001': 'Wi-Fi Bridge',
     '10000000': '433Mhz radio motor',
@@ -53,6 +55,13 @@ CURRENT_STATE = {
         3: 'Limits detected',
         4: '3rd -limit detected',
     },
+    'State': {
+        'OPEN': 1,
+        'OPENING': 2,
+        'CLOSED': 3,
+        'CLOSING': 4,
+        'STOP': 5,
+    }
 }
 OPERATIONS = {
     0: 'Close/Down',

@@ -1,8 +1,8 @@
+from abc import ABC
 import json
 import logging
 
 from .const import *
-from abc import ABC
 
 
 class Device(ABC):
@@ -13,6 +13,7 @@ class Device(ABC):
         self._name = self._read_name_from_file()
         self._rssi = None
         self._msg_status = None
+        self._online = True
 
     @staticmethod
     def _init_log(logger_: logging.Logger) -> logging.Logger:
@@ -80,6 +81,9 @@ class Device(ABC):
 
     def get_logger(self) -> logging.Logger:
         return self._log
+
+    def is_online(self):
+        return self._online
 
     @staticmethod
     def get_timestamp() -> str:
@@ -273,6 +277,9 @@ class Bridge(Device):
     def get_host_address(self) -> str:
         return self._host_address
 
+    def get_firmware(self) -> str:
+        return self._firmware
+
 
 class RadioMotor(Device):
     def __init__(self, mac: str, siro_bridge: any, logger: logging.Logger = None) -> None:
@@ -280,7 +287,7 @@ class RadioMotor(Device):
         self._bridge = siro_bridge
         self._type = ''
         self._operation = ''
-        self._current_position = ''
+        self._current_position = 0
         self._current_angle = ''
         self._current_state = ''
         self._voltage_mode = ''
@@ -288,6 +295,7 @@ class RadioMotor(Device):
         self._wireless_mode = ''
         self._last_msg_id = ''
         self._last_action = ''
+        self._state_move = 0
 
     def init(self) -> None:
         self.update_status(self.get_status())
@@ -312,7 +320,14 @@ class RadioMotor(Device):
         return msg[0]
 
     def _callback_after_stop(self, sock=None, timeout: int = 60) -> dict:
-        from socket import socket, AF_INET, SOCK_DGRAM, inet_aton, IPPROTO_IP, IP_ADD_MEMBERSHIP
+        from socket import (
+            AF_INET,
+            IP_ADD_MEMBERSHIP,
+            IPPROTO_IP,
+            SOCK_DGRAM,
+            inet_aton,
+            socket,
+        )
 
         if sock is None:
             s = socket(AF_INET, SOCK_DGRAM)
@@ -336,7 +351,9 @@ class RadioMotor(Device):
         else:
             self._callback_after_stop(sock=s, timeout=timeout)
 
-    def update_status(self, status: dict) -> None:
+    def update_status(self, status: dict = None) -> None:
+        if not status:
+            status = self.get_status()
         self._type = status['data']['type']
         self._operation = status['data']['operation']
         self._current_position = status['data']['currentPosition']
@@ -352,30 +369,59 @@ class RadioMotor(Device):
     def down(self) -> dict:
         msg = self._set_device(DOWN)
         if msg['data']['currentPosition'] == STATE_DOWN:
+            self._state = CURRENT_STATE['State']['CLOSED']
             return msg
         else:
-            return self._callback_after_stop()
+            self._state = CURRENT_STATE['State']['CLOSING']
+            msg = self._callback_after_stop()
+            self._state = CURRENT_STATE['State']['CLOSED']
+            return msg
 
     def up(self) -> dict:
         msg = self._set_device(UP)
         if msg['data']['currentPosition'] == STATE_UP:
+            self._state = CURRENT_STATE['State']['OPEN']
             return msg
         else:
-            return self._callback_after_stop()
+            self._state = CURRENT_STATE['State']['OPENING']
+            msg = self._callback_after_stop()
+            self._state = CURRENT_STATE['State']['OPEN']
+            return msg
 
     def stop(self) -> dict:
         timeout = 1
 
         msg_1 = self._set_device(STOP)
         msg_2 = self._callback_after_stop(timeout=timeout)
-        if msg_2['msgType'] == 'Report':
-            return msg_2
+
+        # noinspection PyBroadException
+        try:
+            if msg_2['msgType'] == 'Report':
+                msg = msg_2
+            else:
+                msg = msg_1
+        except Exception:
+            msg = msg_1
+
+        self.update_status(msg)
+
+        if self._current_position == UP:
+            self._state = CURRENT_STATE['State']['OPEN']
+        elif self._current_position == DOWN:
+            self._state = CURRENT_STATE['State']['CLOSED']
         else:
-            return msg_1
+            self._state = CURRENT_STATE['State']['STOP']
+        return msg
 
     def position(self, position: int) -> dict:
-        self._set_device(POSITION, position)
-        return self._callback_after_stop()
+        old_position = self._set_device(POSITION, position)['data']['currentPosition']
+        if old_position < position:
+            self._state = CURRENT_STATE['State']['CLOSING']
+        else:
+            self._state = CURRENT_STATE['State']['OPENING']
+
+        msg = self._callback_after_stop()
+        return msg
 
     def get_status(self) -> dict:
         payload = json.dumps(
@@ -391,6 +437,20 @@ class RadioMotor(Device):
 
     def get_status_set(self) -> dict:
         return self._set_device(STATUS)
+
+    def get_firmware(self) -> str:
+        return self._bridge.get_firmware()
+
+    def get_position(self, force_update: bool = False) -> int:
+        if force_update:
+            self.update_status()
+        return self._current_position
+
+    def get_bridge(self) -> Bridge:
+        return self._bridge
+
+    def get_moving_state(self) -> int:
+        return self._state_move
 
 
 class Connector:
