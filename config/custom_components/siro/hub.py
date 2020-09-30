@@ -7,7 +7,8 @@
 import asyncio
 import random
 
-from .siro_conn.siro import Bridge, RadioMotor, Device
+from .siro_conn.siro import Bridge, RadioMotor
+
 
 class Hub:
     """Dummy hub for Hello World example."""
@@ -34,8 +35,7 @@ class Hub:
 
     async def test_connection(self):
         """Test connectivity to the Dummy hub is OK."""
-        self._bridge.
-        return True
+        return self._bridge.validate_key()
 
 
 class SiroBlind:
@@ -116,4 +116,3 @@ class SiroBlind:
         """Battery level as a percentage."""
         battery_level = self.device.get_status()['data']['batteryLevel']/10
         return battery_level
-
