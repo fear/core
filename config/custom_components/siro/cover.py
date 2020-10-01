@@ -147,7 +147,7 @@ class SiroCover(CoverEntity):
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        return self._blind.position == STATE_DOWN
+        return self._blind.get_position() == STATE_DOWN
 
     @property
     def is_closing(self):
@@ -164,22 +164,22 @@ class SiroCover(CoverEntity):
     # TODO async def async_open_cover(self, **kwargs):
     def open_cover(self, **kwargs):
         """Open the cover."""
-        self._blind.down()
+        self._blind.move_down()
 
     # TODO async def async_close_cover(self, **kwargs):
     def close_cover(self, **kwargs):
         """Close the cover."""
-        self._blind.up()
+        self._blind.move_up()
 
     # TODO async def async_set_cover_position(self, **kwargs):
     def set_cover_position(self, **kwargs):
         """Close the cover."""
-        self._blind.position(kwargs[ATTR_POSITION])
+        self._blind.move_to_position(kwargs[ATTR_POSITION])
 
     # TODO async def async_stop_cover(self, **kwargs):
     def stop_cover(self, **kwargs):
         """Stop the cover."""
-        self._blind.stop()
+        self._blind.move_stop()
 
     def update(self):
         self._blind.get_status()
