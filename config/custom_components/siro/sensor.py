@@ -51,7 +51,7 @@ class SensorBase(Entity):
         return {"identifiers": {(DOMAIN, self._blind.get_mac())}}
 
     # This property is important to let HA know if this entity is online or not.
-    # If an entity is offline (return False), the UI will refelect this.
+    # If an entity is offline (return False), the UI will reflect this.
     @property
     def available(self) -> bool:
         """Return True if blind and hub is available."""
@@ -77,7 +77,7 @@ class SensorBase(Entity):
 class BatterySensor(SensorBase):
     """Representation of a Sensor."""
 
-    # The class of this device. Note the value should come from the homeassistant.const
+    # The class of this device. Note the value should come from the home assistant.const
     # module. More information on the available devices classes can be seen here:
     # https://developers.home-assistant.io/docs/core/entity/sensor
     device_class = DEVICE_CLASS_BATTERY
