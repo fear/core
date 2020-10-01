@@ -57,6 +57,11 @@ class SiroCover(CoverEntity):
         """Initialize the sensor."""
         # Usual setup is done here. Callbacks are added in async_added_to_hass.
         self._blind = blind
+        self._moving_state = None
+        self._device_status = None
+        self._position = None
+        self._blind_online = None
+        self._bridge_online = None
 
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
@@ -129,7 +134,7 @@ class SiroCover(CoverEntity):
     @property
     def available(self) -> bool:
         """Return True if roller and hub is available."""
-        return self._blind.is_online() and self._blind.get_bridge().is_online()
+        return self._blind_online and self._bridge_online
 
     # The following properties are how HA knows the current state of the device.
     # These must return a value from memory, not make a live query to the device/hub
@@ -142,22 +147,22 @@ class SiroCover(CoverEntity):
     @property
     def current_cover_position(self):
         """Return the current position of the cover."""
-        return self._blind.get_position()
+        return self._position
 
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        return self._blind.get_position() == STATE_DOWN
+        return self._position == STATE_DOWN
 
     @property
     def is_closing(self):
         """Return if the cover is closing or not."""
-        return self._blind.get_moving_state() == CURRENT_STATE['State']['CLOSING']
+        return self._moving_state == CURRENT_STATE['State']['CLOSING']
 
     @property
     def is_opening(self):
         """Return if the cover is opening or not."""
-        return self._blind.get_moving_state() == CURRENT_STATE['State']['OPENING']
+        return self._moving_state == CURRENT_STATE['State']['OPENING']
 
     # These methods allow HA to tell the actual device what to do. In this case, move
     # the cover to the desired position, or open and close it all the way.
@@ -182,4 +187,8 @@ class SiroCover(CoverEntity):
     #     self._blind.move_stop()
 
     def update(self):
-        self._blind.get_status()
+        self._device_status = self._blind.get_status()
+        self._moving_state = self._blind.get_moving_state()
+        self._position = self._blind.get_position()
+        self._blind_online = self._blind.is_online()
+        self._bridge_online = self._blind.get_bridge().is_online()
