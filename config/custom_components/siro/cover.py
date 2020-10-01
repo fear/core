@@ -154,15 +154,15 @@ class SiroCover(CoverEntity):
         """Return if the cover is closed, same as position 0."""
         return self._position == STATE_DOWN
 
-    @property
-    def is_closing(self):
-        """Return if the cover is closing or not."""
-        return self._moving_state == CURRENT_STATE['State']['CLOSING']
-
-    @property
-    def is_opening(self):
-        """Return if the cover is opening or not."""
-        return self._moving_state == CURRENT_STATE['State']['OPENING']
+    # @property
+    # def is_closing(self):
+    #     """Return if the cover is closing or not."""
+    #     return self._moving_state == CURRENT_STATE['State']['CLOSING']
+    #
+    # @property
+    # def is_opening(self):
+    #     """Return if the cover is opening or not."""
+    #     return self._moving_state == CURRENT_STATE['State']['OPENING']
 
     # These methods allow HA to tell the actual device what to do. In this case, move
     # the cover to the desired position, or open and close it all the way.
