@@ -7,7 +7,7 @@ from homeassistant.components.cover import (
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
-    SUPPORT_STOP,
+    # SUPPORT_STOP,
     CoverEntity,
 )
 
@@ -50,7 +50,7 @@ class SiroCover(CoverEntity):
     # imported above, we can tell HA the features that are supported by this entity.
     # If the supported features were dynamic (ie: different depending on the external
     # device it connected to), then this should be function with an @property decorator.
-    supported_features = SUPPORT_SET_POSITION | SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP
+    supported_features = SUPPORT_SET_POSITION | SUPPORT_OPEN | SUPPORT_CLOSE
     device_class = DEVICE_CLASS_BLIND
 
     def __init__(self, blind: RadioMotor):
@@ -122,7 +122,7 @@ class SiroCover(CoverEntity):
     @property
     def name(self):
         """Return the name of the roller."""
-        return self._blind.get_name()
+        return f"{self._blind.get_mac()}_cover"
 
     # This property is important to let HA know if this entity is online or not.
     # If an entity is offline (return False), the UI will reflect this.
@@ -176,10 +176,10 @@ class SiroCover(CoverEntity):
         """Close the cover."""
         self._blind.move_to_position(kwargs[ATTR_POSITION])
 
-    # TODO async def async_stop_cover(self, **kwargs):
-    def stop_cover(self, **kwargs):
-        """Stop the cover."""
-        self._blind.move_stop()
+    # # TODO async def async_stop_cover(self, **kwargs):
+    # def stop_cover(self, **kwargs):
+    #     """Stop the cover."""
+    #     self._blind.move_stop()
 
     def update(self):
         self._blind.get_status()

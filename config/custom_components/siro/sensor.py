@@ -39,6 +39,8 @@ class SensorBase(Entity):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         self._blind = blind
+        self._battery = None
+        self._name = None
         self._status = self.update()
 
     # To link this entity to the cover device, this property must return an
@@ -71,6 +73,8 @@ class SensorBase(Entity):
 
     def update(self) -> dict:
         self._status = self._blind.get_status()
+        self._battery = int(self._status['data']['batteryLevel'])/10
+        self._name = f"{self._blind.get_mac()}_battery"
         return self._status
 
 
@@ -99,7 +103,7 @@ class BatterySensor(SensorBase):
     @property
     def state(self):
         """Return the state of the sensor."""
-        return self._status['data']['batteryLevel']/10
+        return self._battery
 
     # The unit of measurement for this entity. As it's a DEVICE_CLASS_BATTERY, this
     # should be PERCENTAGE. A number of units are supported by HA, for some
@@ -114,4 +118,4 @@ class BatterySensor(SensorBase):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"{self._blind.get_mac()} Battery"
+        return f"{self._blind.get_mac()}_battery"
