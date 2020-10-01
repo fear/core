@@ -369,23 +369,23 @@ class RadioMotor(Device):
     def down(self) -> dict:
         msg = self._set_device(DOWN)
         if msg['data']['currentPosition'] == STATE_DOWN:
-            self._state = CURRENT_STATE['State']['CLOSED']
+            self._state_move = CURRENT_STATE['State']['CLOSED']
             return msg
         else:
-            self._state = CURRENT_STATE['State']['CLOSING']
+            self._state_move = CURRENT_STATE['State']['CLOSING']
             msg = self._callback_after_stop()
-            self._state = CURRENT_STATE['State']['CLOSED']
+            self._state_move = CURRENT_STATE['State']['CLOSED']
             return msg
 
     def up(self) -> dict:
         msg = self._set_device(UP)
         if msg['data']['currentPosition'] == STATE_UP:
-            self._state = CURRENT_STATE['State']['OPEN']
+            self._state_move = CURRENT_STATE['State']['OPEN']
             return msg
         else:
-            self._state = CURRENT_STATE['State']['OPENING']
+            self._state_move = CURRENT_STATE['State']['OPENING']
             msg = self._callback_after_stop()
-            self._state = CURRENT_STATE['State']['OPEN']
+            self._state_move = CURRENT_STATE['State']['OPEN']
             return msg
 
     def stop(self) -> dict:
@@ -406,19 +406,19 @@ class RadioMotor(Device):
         self.update_status(msg)
 
         if self._current_position == UP:
-            self._state = CURRENT_STATE['State']['OPEN']
+            self._state_move = CURRENT_STATE['State']['OPEN']
         elif self._current_position == DOWN:
-            self._state = CURRENT_STATE['State']['CLOSED']
+            self._state_move = CURRENT_STATE['State']['CLOSED']
         else:
-            self._state = CURRENT_STATE['State']['STOP']
+            self._state_move = CURRENT_STATE['State']['STOP']
         return msg
 
     def position(self, position: int) -> dict:
         old_position = self._set_device(POSITION, position)['data']['currentPosition']
         if old_position < position:
-            self._state = CURRENT_STATE['State']['CLOSING']
+            self._state_move = CURRENT_STATE['State']['CLOSING']
         else:
-            self._state = CURRENT_STATE['State']['OPENING']
+            self._state_move = CURRENT_STATE['State']['OPENING']
 
         msg = self._callback_after_stop()
         return msg
