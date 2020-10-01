@@ -164,12 +164,12 @@ class SiroCover(CoverEntity):
     # TODO async def async_open_cover(self, **kwargs):
     def open_cover(self, **kwargs):
         """Open the cover."""
-        self._blind.move_down()
+        self._blind.move_up()
 
     # TODO async def async_close_cover(self, **kwargs):
     def close_cover(self, **kwargs):
         """Close the cover."""
-        self._blind.move_up()
+        self._blind.move_down()
 
     # TODO async def async_set_cover_position(self, **kwargs):
     def set_cover_position(self, **kwargs):
