@@ -61,7 +61,7 @@ class SiroCover(CoverEntity):
         self._blind = blind
         self._moving_state = None
         self._device_status = None
-        self._position = None
+        self._position: int = None
         self._blind_online = None
         self._bridge_online = None
 
@@ -149,7 +149,7 @@ class SiroCover(CoverEntity):
     @property
     def current_cover_position(self):
         """Return the current position of the cover."""
-        return self._position
+        return 100 - self._position
 
     @property
     def is_closed(self):
