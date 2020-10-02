@@ -26,9 +26,7 @@ from .const import (
 from socket import (
     AF_INET,
     IPPROTO_IP,
-    IPPROTO_UDP,
     IP_ADD_MEMBERSHIP,
-    IP_MULTICAST_TTL,
     SOCK_DGRAM,
     inet_aton,
     socket,
@@ -70,8 +68,9 @@ class Device(ABC):
         self._last_update = datetime.now()
 
     def _set_last_msg_status(self, msg: dict) -> None:
-        self._msg_status = msg
-        self._set_last_update()
+        if msg['mac'] == self._mac:
+            self._msg_status = msg
+            self._set_last_update()
 
     def _get_persisted_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
         try:
@@ -321,55 +320,6 @@ class Bridge(Device):
         self._set_last_msg_callback(data)
 
         if data['msgType'] == MSG_TYPES['REPORT']:
-            self._set_last_msg_callback(data)
-            return data
-        else:
-            self.get_callback_from_bridge(timeout=timeout)
-
-    def send_payload_old(self, payload: str) -> (dict, str):
-        if self._bridge_address == '':
-            remote_ip = MULTICAST_GRP
-        else:
-            remote_ip = self._bridge_address
-        try:
-            s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-            s.setsockopt(IPPROTO_IP, IP_MULTICAST_TTL, 32)
-            s.bind((self._callback_address, CALLBACK_PORT))
-            s.settimeout(UDP_TIMEOUT)
-
-            s.sendto(payload.encode(), (remote_ip, SEND_PORT))
-            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {payload}.')
-
-            data, address = s.recvfrom(1024)
-            message = json.loads(data.decode('utf-8'))
-            port = address[1]
-            address = address[0]
-            s.close()
-            self.get_logger().debug(f'{self._mac}: Receive from {address}:{port}: {message}.')
-            return message, address
-        except Exception:
-            raise
-
-    def get_callback_from_bridge_old(self, sock=None, timeout: int = 60) -> dict:
-        if sock is None:
-            s = socket(AF_INET, SOCK_DGRAM)
-            s.bind(('', CALLBACK_PORT))
-            s.settimeout(timeout)
-            mreq = inet_aton(MULTICAST_GRP) + inet_aton(self._callback_address)
-            s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
-        else:
-            s = sock
-        # noinspection PyBroadException
-        try:
-            msg = s.recv(1024)
-        except Exception as e:
-            self._log.warning(e)
-            return {'msgType': 'timeout'}
-        data = json.loads(msg.decode('utf-8'))
-        self._set_last_msg_callback(data)
-
-        if data['msgType'] == MSG_TYPES['REPORT']:
-            # s.close()
             self._set_last_msg_callback(data)
             return data
         else:
