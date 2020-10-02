@@ -7,12 +7,11 @@ from homeassistant.components.cover import (
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
-    # SUPPORT_STOP,
     CoverEntity
 )
 
 from .const import DOMAIN
-from .siro_conn.const import DEVICE_TYPES, STATE_DOWN  # , CURRENT_STATE
+from .siro_conn.const import DEVICE_TYPES  # , CURRENT_STATE
 from .siro_conn.siro import RadioMotor
 
 
