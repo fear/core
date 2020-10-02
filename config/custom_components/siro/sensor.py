@@ -24,6 +24,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     new_devices = []
     for device in bridge.get_devices():
         new_devices.append(BatterySensor(device))
+        new_devices.append(RSSISensor(device))
     if new_devices:
         async_add_devices(new_devices)
 
@@ -128,7 +129,7 @@ class BatterySensor(SensorBase):
         return f"{self._blind.get_mac()}_battery"
 
 
-class IlluminanceSensor(SensorBase):
+class RSSISensor(SensorBase):
     """Representation of a Sensor."""
 
     device_class = DEVICE_CLASS_SIGNAL_STRENGTH
