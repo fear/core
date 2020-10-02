@@ -8,9 +8,7 @@ from homeassistant.components.cover import (
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
     # SUPPORT_STOP,
-    CoverEntity,
-    STATE_OPEN,
-    STATE_CLOSED,
+    CoverEntity
 )
 
 from .const import DOMAIN
@@ -61,7 +59,7 @@ class SiroCover(CoverEntity):
         self._blind = blind
         self._moving_state = None
         self._device_status = None
-        self._position: int = None
+        self._position = None
         self._blind_online = None
         self._bridge_online = None
 
