@@ -138,15 +138,14 @@ class RSSISensor(SensorBase):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         super().__init__(blind)
-        self._state = None
-        self._rssi = None
-        self._name = None
-
-    def update(self) -> dict:
         self._status = self._blind.get_status()
-        self._rssi = self._get_rssi()
         self._name = f"{self._blind.get_mac()}_rssi"
-        return self._status
+        self._rssi = self._get_rssi()
+
+    def update(self):
+        self._status = self._blind.get_status()
+        self._name = f"{self._blind.get_mac()}_rssi"
+        self._rssi = self._get_rssi()
 
     def _get_rssi(self) -> int:
         return int(self._status['data']['RSSI'])

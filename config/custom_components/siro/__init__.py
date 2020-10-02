@@ -18,7 +18,6 @@ async def async_setup(hass: HomeAssistant, config: dict):
     # common/preferred as it allows a separate instance of your class for each
     # instance that has been created in the UI.
     hass.data.setdefault(DOMAIN, {})
-
     return True
 
 
@@ -53,5 +52,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     )
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
-
     return unload_ok
