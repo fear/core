@@ -63,6 +63,8 @@ class SiroCover(CoverEntity):
         self._blind_online = None
         self._bridge_online = None
 
+        self.update()
+
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
         # Importantly for a push integration, the module that will be getting updates

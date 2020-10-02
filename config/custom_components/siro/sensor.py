@@ -88,6 +88,8 @@ class BatterySensor(SensorBase):
         self._battery = None
         self._name = None
 
+        self.update()
+
     def update(self) -> dict:
         self._status = self._blind.get_status()
         self._battery = self._get_battery_level()
@@ -138,9 +140,11 @@ class RSSISensor(SensorBase):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         super().__init__(blind)
-        self._status = self._blind.get_status()
-        self._name = f"{self._blind.get_mac()}_rssi"
-        self._rssi = self._get_rssi()
+        self._status = None
+        self._name = None
+        self._rssi = None
+
+        self.update()
 
     def update(self):
         self._status = self._blind.get_status()
