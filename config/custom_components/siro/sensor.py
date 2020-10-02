@@ -6,7 +6,7 @@
 # what the unit is, so it can display the correct range. For predefined types (such as
 # battery), the unit_of_measurement should match what's expected.
 
-from homeassistant.const import DEVICE_CLASS_BATTERY, PERCENTAGE
+from homeassistant.const import DEVICE_CLASS_BATTERY, PERCENTAGE, DEVICE_CLASS_SIGNAL_STRENGTH
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
@@ -84,7 +84,6 @@ class BatterySensor(SensorBase):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         super().__init__(blind)
-        self._state = None
         self._battery = None
         self._name = None
 
@@ -127,3 +126,46 @@ class BatterySensor(SensorBase):
     def name(self):
         """Return the name of the sensor."""
         return f"{self._blind.get_mac()}_battery"
+
+
+class IlluminanceSensor(SensorBase):
+    """Representation of a Sensor."""
+
+    device_class = DEVICE_CLASS_SIGNAL_STRENGTH
+    DECIBEL = "dB"
+
+    def __init__(self, blind: RadioMotor):
+        """Initialize the sensor."""
+        super().__init__(blind)
+        self._state = None
+        self._rssi = None
+        self._name = None
+
+    def update(self) -> dict:
+        self._status = self._blind.get_status()
+        self._rssi = self._get_rssi()
+        self._name = f"{self._blind.get_mac()}_rssi"
+        return self._status
+
+    def _get_rssi(self) -> int:
+        return int(self._status['data']['RSSI'])
+
+    @property
+    def unique_id(self):
+        """Return Unique ID string."""
+        return self._name
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+        return self._rssi
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement."""
+        return self.DECIBEL
