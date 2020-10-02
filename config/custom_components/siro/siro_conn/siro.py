@@ -262,21 +262,6 @@ class Bridge(Device):
         except KeyError:
             return True
 
-    def print_device_info(self) -> None:
-        print(f"Mac: {self._mac}")
-        print(f"Device Type: {self._devicetype}")
-        print(f"Key: {self._key}")
-        print(f"Access Token: {self._access_token}")
-        print(f"current State: {self._current_state}")
-        print(f"RSSI: {self._rssi}")
-        print(f"Bridge Address: {self._bridge_address}")
-        print(f"Callback Address: {self._callback_address}")
-        print(f"Protocol Version: {self._protocol_version}")
-        print(f"Firmware Version: {self._firmware}")
-        print(f"Token: {self._token}")
-        print(f"Message Heartbeat: {self._msg_status}")
-        print(f"Message Device list: {self._msg_device_list}")
-
     def _init_socket(self) -> None:
         try:
             s = socket(AF_INET, SOCK_DGRAM)
