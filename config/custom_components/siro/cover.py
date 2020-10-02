@@ -12,7 +12,7 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from .siro_conn.const import CURRENT_STATE, DEVICE_TYPES, STATE_DOWN
+from .siro_conn.const import DEVICE_TYPES, STATE_DOWN  # , CURRENT_STATE
 from .siro_conn.siro import RadioMotor
 
 
@@ -115,7 +115,7 @@ class SiroCover(CoverEntity):
         return {
             "identifiers": {(DOMAIN, self._blind.get_mac())},
             # If desired, the name for the device could be different to the entity
-            "name": self._blind.get_name(),
+            "name": f"{self._blind.get_mac()}_cover",
             "sw_version": self._blind.get_firmware(),
             "model": DEVICE_TYPES[self._blind.get_devicetype()],
             "manufacturer": "SIRO",

@@ -39,8 +39,6 @@ class SensorBase(Entity):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         self._blind = blind
-        self._battery = None
-        self._name = None
         self._status = self.update()
 
     # To link this entity to the cover device, this property must return an
@@ -73,9 +71,6 @@ class SensorBase(Entity):
 
     def update(self) -> dict:
         self._status = self._blind.get_status()
-        self._battery = int(self._status['data']['batteryLevel'])/10
-        self._name = f"{self._blind.get_mac()}_battery"
-        return self._status
 
 
 class BatterySensor(SensorBase):
@@ -89,7 +84,19 @@ class BatterySensor(SensorBase):
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""
         super().__init__(blind)
-        self._state = self._status['data']['batteryLevel']/10
+        self._state = None
+        self._battery = None
+        self._name = None
+
+    def update(self) -> dict:
+        self._status = self._blind.get_status()
+        self._battery = self._get_battery_level()
+        self._name = f"{self._blind.get_mac()}_battery"
+        return self._status
+
+    def _get_battery_level(self) -> int:
+        if self._status:
+            return int(self._status['data']['batteryLevel'])/10
 
     # As per the sensor, this must be a unique value within this domain. This is done
     # by using the device ID, and appending "_battery"
