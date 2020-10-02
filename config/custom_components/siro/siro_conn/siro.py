@@ -302,9 +302,11 @@ class Bridge(Device):
 
             data, address = self._get_socket().recvfrom(1024)
             message = json.loads(data.decode('utf-8'))
-
-            self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
-            return message, address[0]
+            if data['msgType'] != MSG_TYPES['ALIVE']:
+                self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
+                return message, address[0]
+            else:
+                return self.send_payload(payload)
         except Exception:
             raise
 
