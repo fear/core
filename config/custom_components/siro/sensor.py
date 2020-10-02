@@ -69,7 +69,7 @@ class SensorBase(Entity):
         # TODO self._blind.remove_callback(self.async_write_ha_state)
         pass
 
-    def update(self) -> dict:
+    def update(self) -> None:
         self._status = self._blind.get_status()
 
 
@@ -94,9 +94,10 @@ class BatterySensor(SensorBase):
         self._name = f"{self._blind.get_mac()}_battery"
         return self._status
 
-    def _get_battery_level(self) -> int:
+    def _get_battery_level(self) -> float:
         if self._status:
-            return int(self._status['data']['batteryLevel'])/10
+            self._blind.get_logger().warning('self._status')
+            return float(self._status['data']['batteryLevel'])/10
 
     # As per the sensor, this must be a unique value within this domain. This is done
     # by using the device ID, and appending "_battery"
