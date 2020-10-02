@@ -430,6 +430,7 @@ class RadioMotor(Device):
 
     def _callback_after_stop(self, timeout: int = 60) -> dict:
         msg = self._bridge.get_callback_from_bridge(timeout=timeout)
+        print(msg)
         self._set_last_msg_status(msg)
         self.update_status()
         return msg
