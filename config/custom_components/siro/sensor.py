@@ -96,7 +96,7 @@ class BatterySensor(SensorBase):
 
     def _get_battery_level(self) -> float:
         if self._status:
-            self._blind.get_logger().warning('self._status')
+            self._blind.get_logger().warning(self._status)
             return float(self._status['data']['batteryLevel'])/10
 
     # As per the sensor, this must be a unique value within this domain. This is done
