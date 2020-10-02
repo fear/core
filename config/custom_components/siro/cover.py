@@ -14,7 +14,7 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from .siro_conn.const import DEVICE_TYPES, STATE_DOWN  # , CURRENT_STATE
+from .siro_conn.const import DEVICE_TYPES, STATE_DOWN, STATE_UP  # , CURRENT_STATE
 from .siro_conn.siro import RadioMotor
 
 
@@ -154,10 +154,7 @@ class SiroCover(CoverEntity):
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        if self._position == STATE_DOWN:
-            return STATE_CLOSED
-        else:
-            return STATE_OPEN
+        self._position == STATE_DOWN
 
     # @property
     # def is_closing(self):
