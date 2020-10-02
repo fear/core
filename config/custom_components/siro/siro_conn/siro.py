@@ -487,7 +487,8 @@ class RadioMotor(Device):
         return msg
 
     def move_to_position(self, position: int) -> dict:
-        old_position = self._set_device(POSITION, position)['data']['currentPosition']
+        msg = self._set_device(POSITION, position)
+        old_position = msg['data']['currentPosition']
         if old_position < position:
             self._state_move = CURRENT_STATE['State']['CLOSING']
         else:
