@@ -316,7 +316,8 @@ class Bridge(Device):
             self._set_last_msg_callback(data)
             return data
         else:
-            self.get_callback_from_bridge(timeout=timeout)
+            print(f"get_callback_from_bridge -> not Report: {data}")
+            return self.get_callback_from_bridge(timeout=timeout)
 
     # noinspection PyTypeChecker
     def load_devices(self) -> None:
@@ -413,7 +414,7 @@ class RadioMotor(Device):
         self.update_status()
         return msg[0]
 
-    def _callback_after_stop(self, timeout: int = 60) -> dict:
+    def _callback_after_stop(self, timeout: int = 30) -> dict:
         msg = self._bridge.get_callback_from_bridge(timeout=timeout)
         print(msg)
         self._set_last_msg_status(msg)
