@@ -220,20 +220,23 @@ class Bridge(Device):
             self._access_token = access_token.upper()
         return self._access_token
 
-    def _update_status(self) -> None:
-        payload = json.dumps(
-            {
-                "msgType": MSG_TYPES['WRITE'],
-                "mac": self._mac,
-                "deviceType": self._devicetype,
-                "AccessToken": self._access_token,
-                "msgID": self.get_timestamp(),
-                "data": {'operation': 5}
-            }
-        )
+    def _update_status(self, force_update: bool = False) -> None:
+        if force_update:
+            payload = json.dumps(
+                {
+                    "msgType": MSG_TYPES['WRITE'],
+                    "mac": self._mac,
+                    "deviceType": self._devicetype,
+                    "AccessToken": self._access_token,
+                    "msgID": self.get_timestamp(),
+                    "data": {'operation': 5}
+                }
+            )
 
-        status = self.send_payload(payload)
-        status = status[0]
+            status = self.send_payload(payload)
+            status = status[0]
+        else:
+            status = self._msg_status
 
         self._current_state = status['data']['currentState']
         self._number_of_devices = status['data']['numberOfDevices']
@@ -247,7 +250,7 @@ class Bridge(Device):
 
     def get_status(self, force_update: bool = False) -> dict:
         if force_update:
-            self._update_status()
+            self._update_status(force_update=True)
 
         return self._msg_status
 
@@ -302,10 +305,13 @@ class Bridge(Device):
 
             data, address = self._get_socket().recvfrom(1024)
             message = json.loads(data.decode('utf-8'))
-            if data['msgType'] != MSG_TYPES['ALIVE']:
+
+            if message['msgType'] != MSG_TYPES['ALIVE']:
                 self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
                 return message, address[0]
             else:
+                self._set_last_msg_status(message)
+                self._update_status()
                 return self.send_payload(payload)
         except Exception:
             raise
