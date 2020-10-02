@@ -9,6 +9,8 @@ from homeassistant.components.cover import (
     SUPPORT_SET_POSITION,
     # SUPPORT_STOP,
     CoverEntity,
+    STATE_OPEN,
+    STATE_CLOSED,
 )
 
 from .const import DOMAIN
@@ -152,7 +154,10 @@ class SiroCover(CoverEntity):
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        return self._position == STATE_DOWN
+        if self._position == STATE_DOWN:
+            return STATE_CLOSED
+        else:
+            return STATE_OPEN
 
     # @property
     # def is_closing(self):
