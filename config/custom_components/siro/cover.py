@@ -154,7 +154,7 @@ class SiroCover(CoverEntity):
     @property
     def is_closed(self):
         """Return if the cover is closed, same as position 0."""
-        return self._position == STATE_DOWN
+        return self._position == STATE_UP
 
     # @property
     # def is_closing(self):
