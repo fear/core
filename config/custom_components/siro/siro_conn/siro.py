@@ -296,12 +296,14 @@ class Bridge(_Device):
         self.send_payload(payload)
 
     def validate_key(self) -> bool:
-        try:
-            status = self.get_status()
-            if status['actionResult'] == 'AccessToken error':
-                raise ValueError('The key was rejected!')
-        except KeyError:
-            return True
+        # TODO Implement sync KeyCheck
+        # try:
+        #     status = self.get_status()
+        #     if status['actionResult'] == 'AccessToken error':
+        #         raise ValueError('The key was rejected!')
+        # except KeyError:
+        #     return True
+        return True
 
     def _init_socket(self) -> None:
         try:
