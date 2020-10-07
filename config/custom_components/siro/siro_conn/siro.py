@@ -155,6 +155,7 @@ class _Device(ABC):
         return self._log
 
     def is_online(self):
+        # TODO Implement Online Check
         return self._online
 
     def set_status(self, status: dict) -> None:
@@ -240,7 +241,7 @@ class Bridge(_Device):
             )
             self.send_payload(payload)
 
-        data, address = self._get_socket().recvfrom(1024)
+        data, address = self._sock.recvfrom(1024)
         message = loads(data.decode('utf-8'))
 
         if message['msgType'] == MSG_TYPES['LIST_ACK']:
@@ -297,13 +298,12 @@ class Bridge(_Device):
 
     def validate_key(self) -> bool:
         # TODO Implement sync KeyCheck
-        # try:
-        #     status = self.get_status()
-        #     if status['actionResult'] == 'AccessToken error':
-        #         raise ValueError('The key was rejected!')
-        # except KeyError:
-        #     return True
-        return True
+        try:
+            status = self.get_status()
+            if status['actionResult'] == 'AccessToken error':
+                raise ValueError('The key was rejected!')
+        except (KeyError, Exception):
+            return True
 
     def _init_socket(self) -> None:
         try:
@@ -311,15 +311,10 @@ class Bridge(_Device):
             s.bind(('', CALLBACK_PORT))
             mreq = inet_aton(MULTICAST_GRP) + inet_aton(self._callback_address)
             s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
+            s.settimeout(UDP_TIMEOUT)
             self._sock = s
         except Exception:
             raise
-
-    def _set_socket_timeout(self, timeout: int) -> None:
-        self._sock.settimeout(timeout)
-
-    def _get_socket(self) -> socket:
-        return self._sock
 
     def send_payload(self, payload: str) -> None:
         if self._bridge_address == '':
@@ -327,8 +322,7 @@ class Bridge(_Device):
         else:
             remote_ip = self._bridge_address
         try:
-            self._set_socket_timeout(UDP_TIMEOUT)
-            self._get_socket().sendto(payload.encode(), (remote_ip, SEND_PORT))
+            self._sock.sendto(payload.encode(), (remote_ip, SEND_PORT))
             self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {payload}.')
         except Exception:
             raise
