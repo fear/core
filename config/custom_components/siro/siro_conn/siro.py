@@ -329,32 +329,31 @@ class Bridge(_Device):
 
     # noinspection PyTypeChecker
     def load_devices(self) -> None:
-        if self._number_of_devices > 0:
-            for known_device in self._msg_device_list["data"]:
-                if known_device['deviceType'] == RADIO_MOTOR:
-                    new_device = Helper.device_factory(
-                        known_device['mac'],
-                        known_device['deviceType'],
-                        self,
-                        self._log
-                    )
-                    if not self.check_if_device_exist(known_device['mac']):
-                        self._devices.append(new_device)
-                        self.get_logger().info(f'{self._mac}: Created Device with mac {known_device["mac"]}.')
-                    else:
-                        self.get_logger().info(f'{self._mac}: Device with mac {known_device["mac"]} already exists.')
-                elif known_device['deviceType'] == WIFI_BRIDGE:
-                    pass
+        for known_device in self._msg_device_list["data"]:
+            if known_device['deviceType'] == RADIO_MOTOR:
+                new_device = Helper.device_factory(
+                    known_device['mac'],
+                    known_device['deviceType'],
+                    self,
+                    self._log
+                )
+                if not self.check_if_device_exist(known_device['mac']):
+                    self._devices.append(new_device)
+                    self.get_logger().info(f'{self._mac}: Created Device with mac {known_device["mac"]}.')
                 else:
-                    self.get_logger().warning(
-                        f'{known_device["mac"]}: Found not supported device of Type {known_device["deviceType"]}. '
-                    )
+                    self.get_logger().info(f'{self._mac}: Device with mac {known_device["mac"]} already exists.')
+            elif known_device['deviceType'] == WIFI_BRIDGE:
+                pass
+            else:
+                self.get_logger().warning(
+                    f'{known_device["mac"]}: Found not supported device of Type {known_device["deviceType"]}. '
+                )
 
     def check_if_device_exist(self, mac: str) -> bool:
         try:
             self.get_device_by_mac(mac)
-        except UserWarning as warn:
-            self.get_logger().debug(warn)
+        except UserWarning:
+            self.get_logger().warning(f"Got unknown device witch identifier {mac}.")
             return False
         else:
             return True
@@ -383,9 +382,7 @@ class Bridge(_Device):
         return self._firmware
 
     def update_devices(self, message) -> None:
-        msg_type = message['msgType']
         mac = message['mac']
-
         self.get_logger().debug(f"Received message: {message}")
         if mac == self._mac:
             self.set_status(message)
