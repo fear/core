@@ -7,7 +7,8 @@ from homeassistant.components.cover import (
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
     SUPPORT_SET_POSITION,
-    CoverEntity
+    SUPPORT_STOP,
+    CoverEntity,
 )
 
 from .const import DOMAIN
@@ -49,7 +50,7 @@ class SiroCover(CoverEntity):
     # imported above, we can tell HA the features that are supported by this entity.
     # If the supported features were dynamic (ie: different depending on the external
     # device it connected to), then this should be function with an @property decorator.
-    supported_features = SUPPORT_SET_POSITION | SUPPORT_OPEN | SUPPORT_CLOSE
+    supported_features = SUPPORT_SET_POSITION | SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP
     device_class = DEVICE_CLASS_BLIND
 
     def __init__(self, blind: RadioMotor):
@@ -185,9 +186,9 @@ class SiroCover(CoverEntity):
         self._blind.move_to_position(position)
 
     # # TODO async def async_stop_cover(self, **kwargs):
-    # def stop_cover(self, **kwargs):
-    #     """Stop the cover."""
-    #     self._blind.move_stop()
+    def stop_cover(self, **kwargs):
+        """Stop the cover."""
+        self._blind.move_stop()
 
     def update(self, force_update: bool = False):
         self._device_status = self._blind.get_status(force_update)
