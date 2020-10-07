@@ -392,7 +392,7 @@ class Bridge(_Device):
         msg_type = message['msgType']
         mac = message['mac']
 
-        print(msg_type, mac, message)
+        self.get_logger().debug(f"Received message: {message}")
         if mac == self._mac:
             self.set_status(message)
         elif self.check_if_device_exist(mac):

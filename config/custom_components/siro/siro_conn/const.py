@@ -5,7 +5,7 @@ from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 # Config File
 CONFIGFILE_DEVICE_NAMES = 'persisted_names.json'
 LOG_FILE = 'siro_conn.log'
-LOG_LEVEL = INFO
+LOG_LEVEL = DEBUG
 
 # Device Types
 RADIO_MOTOR = '10000000'
