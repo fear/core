@@ -63,7 +63,7 @@ class SiroCover(CoverEntity):
         self._blind_online = None
         self._bridge_online = None
 
-        self.update(force_update=True)
+        self.update()
 
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
@@ -190,8 +190,8 @@ class SiroCover(CoverEntity):
         """Stop the cover."""
         self._blind.move_stop()
 
-    def update(self, force_update: bool = False):
-        self._device_status = self._blind.get_status(force_update)
+    def update(self):
+        self._device_status = self._blind.get_status()
         self._moving_state = self._blind.get_moving_state()
         self._position = self._blind.get_position()
         self._blind_online = self._blind.is_online()
