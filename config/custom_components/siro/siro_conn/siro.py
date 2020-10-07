@@ -404,6 +404,7 @@ class RadioMotor(_Device):
         self._battery_level = ''
         self._wireless_mode = ''
         self._last_action = ''
+        self._movement_state = ''
 
     def init(self) -> None:
         self.update_status()

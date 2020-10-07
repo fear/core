@@ -33,8 +33,6 @@ ANGLE = 4
 STATUS = 5
 
 # Dictionaries
-
-
 DEVICE_TYPES = {
     '02000001': 'Wi-Fi Bridge',
     '10000000': '433Mhz radio motor',
