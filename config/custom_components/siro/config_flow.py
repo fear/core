@@ -6,7 +6,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 
 from .const import DOMAIN
-from .siro_conn.siro import Bridge, Connector
+from .siro_conn.siro import Bridge, Helper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -37,7 +37,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     if len(data["host"]) < 3:
         raise InvalidHost
 
-    if not Connector.bridge_factory('30b9217c-6d18-4d').validate_key():
+    if not Helper.bridge_factory('30b9217c-6d18-4d').validate_key():
         raise CannotConnect
 
     # If your PyPI package is not built with async, pass your methods
