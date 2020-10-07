@@ -152,7 +152,10 @@ class RSSISensor(SensorBase):
         self._rssi = self._get_rssi()
 
     def _get_rssi(self) -> int:
-        return int(self._status['data']['RSSI'])
+        if self._status:
+            return int(self._status['data']['RSSI'])
+        else:
+            return 0
 
     @property
     def unique_id(self):
