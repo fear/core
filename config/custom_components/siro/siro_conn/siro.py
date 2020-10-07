@@ -411,12 +411,11 @@ class RadioMotor(_Device):
         self._battery_level = ''
         self._wireless_mode = ''
         self._last_action = ''
-        self._state_move = 0
 
     def init(self) -> None:
         self.update_status()
 
-    def _set_device(self, action: int, position: int = 0) -> None:
+    def _control_device(self, action: int, position: int = 0) -> None:
         if action == POSITION:
             data = {'targetPosition': position}
         else:
@@ -451,19 +450,19 @@ class RadioMotor(_Device):
             raise
 
     def update_status(self) -> None:
-        self._set_device(STATUS)
+        self._control_device(STATUS)
 
     def move_down(self) -> None:
-        self._set_device(DOWN)
+        self._control_device(DOWN)
 
     def move_up(self) -> None:
-        self._set_device(UP)
+        self._control_device(UP)
 
     def move_stop(self) -> None:
-        self._set_device(STOP)
+        self._control_device(STOP)
 
     def move_to_position(self, position: int) -> None:
-        self._set_device(POSITION, position)
+        self._control_device(POSITION, position)
 
     def get_status(self) -> dict:
         return self._msg_status
@@ -477,14 +476,8 @@ class RadioMotor(_Device):
     def get_bridge(self) -> Bridge:
         return self._bridge
 
-    def get_moving_state(self) -> int:
-        return self._state_move
-
 
 class Helper(object):
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     async def bridge_factory(key: str, log: Logger = None, loop=None, bridge_address: str = '') -> Bridge:
         if not loop:
@@ -502,17 +495,13 @@ class Helper(object):
         else:
             raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
 
-    @staticmethod
-    def get_device_name(device: _Device):
-        return device.get_name()
-
 
 class _AESElectronicCodeBook(object):
     """Contributes to https://github.com/ricmoo/pyaes
     """
 
     # Round constant words
-    rcon = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc,
+    RCON = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc,
             0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91]
 
     # S-box and Inverse S-box (S is for Substitution)
@@ -815,7 +804,7 @@ class _AESElectronicCodeBook(object):
                       (self.S[(tt >> 8) & 0xFF] << 16) ^
                       (self.S[tt & 0xFF] << 8) ^
                       self.S[(tt >> 24) & 0xFF] ^
-                      (self.rcon[rconpointer] << 24))
+                      (self.RCON[rconpointer] << 24))
             rconpointer += 1
 
             if kc != 8:
@@ -910,11 +899,9 @@ class SiroUDPProtocol(asyncio.DatagramProtocol):
         self._bridge = bridge
 
     def connection_made(self, transport) -> None:
-        self._bridge.get_logger().debug('Connection Made')
         self._transport = transport
 
     def connection_lost(self, exc) -> None:
-        self._bridge.get_logger().debug('Connection Lost')
         print('Connection Lost')
 
     def datagram_received(self, data, addr) -> None:
