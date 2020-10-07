@@ -57,7 +57,6 @@ class SiroCover(CoverEntity):
         """Initialize the sensor."""
         # Usual setup is done here. Callbacks are added in async_added_to_hass.
         self._blind = blind
-        self._moving_state = None
         self._device_status = None
         self._position = None
         self._blind_online = None
@@ -192,7 +191,6 @@ class SiroCover(CoverEntity):
 
     def update(self):
         self._device_status = self._blind.get_status()
-        self._moving_state = self._blind.get_moving_state()
         self._position = self._blind.get_position()
         self._blind_online = self._blind.is_online()
         self._bridge_online = self._blind.get_bridge().is_online()
