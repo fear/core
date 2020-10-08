@@ -739,7 +739,8 @@ class RadioMotor(_Device):
                     state_changed = True
 
         if state_changed:
-            self.get_logger().info(f"Device {self._mac} got update for movement state: {self._movement_state}")
+            self.get_logger().info(f"Device {self._mac} got update for movement state: "
+                                   f"{CURRENT_STATE['StateRev'][self._movement_state]}")
 
     def _control_device(self, action: int, position: int = 0) -> None:
         """
@@ -758,6 +759,8 @@ class RadioMotor(_Device):
             self._target_position = 0
         if action == STOP:
             self._target_position = -1
+        if action == STATUS:
+            self._target_position = self._current_position
         if action == POSITION:
             self._target_position = position
             data = {'targetPosition': position}
@@ -787,6 +790,7 @@ class RadioMotor(_Device):
         self._set_last_msg_status(status)
         try:
             if status['msgType'] == 'Report':
+                # self._target_position =
                 print('-----------------------Report-----------------------')
                 print(status)
                 print('-----------------------Report-----------------------')

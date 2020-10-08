@@ -81,7 +81,14 @@ CURRENT_STATE = {
         'CLOSED': 3,
         'CLOSING': 4,
         'STOP': 5,
-    }
+    },
+    'StateRev': {
+        1: 'OPEN',
+        2: 'OPENING',
+        3: 'CLOSED',
+        4: 'CLOSING',
+        5: 'STOP',
+    },
 }
 OPERATIONS = {
     0: 'Close/Down',
