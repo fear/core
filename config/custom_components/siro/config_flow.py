@@ -19,36 +19,16 @@ DATA_SCHEMA = {
 
 
 async def validate_input(hass: core.HomeAssistant, data: dict):
-    """Validate the user input allows us to connect.
-
-    Data has the keys from DATA_SCHEMA with values provided by the user.
     """
-    # Validate the data can be used to set up a connection.
+    Validate the user input allows us to connect.
+    """
 
-    # This is a simple example to show an error in the UI for a short hostname
-    # The exceptions are defined at the end of this file, and are used in the
-    # `async_step_user` method below.
     if len(data["key"]) != 16:
         raise InvalidKey
 
     # if not Helper.bridge_factory('30b9217c-6d18-4d').validate_key():
     #     raise CannotConnect
 
-    # If your PyPI package is not built with async, pass your methods
-    # to the executor:
-    # await hass.async_add_executor_job(
-    #     your_validate_func, data["username"], data["password"]
-    # )
-
-    # If you cannot connect:
-    # throw CannotConnect
-    # If the authentication is wrong:
-    # InvalidAuth
-
-    # Return info that you want to store in the config entry.
-    # "Title" is what is displayed to the user for this hub device
-    # It is stored internally in HA as part of the device config.
-    # See `async_step_user` below for how this is used
     return {
         "title": data["title"],
         "key": data["key"],

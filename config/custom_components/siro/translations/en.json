@@ -1,13 +1,13 @@
 {
     "config": {
         "abort": {
-            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+            "already_configured": "The bridge is already configured."
         },
         "error": {
-            "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-            "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+            "cannot_connect": "Can not connect to the bridge.",
+            "invalid_auth": "The key is not accepted",
             "wrong_key": "The key has a wrong length.",
-            "unknown": "[%key:common::config_flow::error::unknown%]"
+            "unknown": "Unknown error."
         },
         "step": {
             "user": {

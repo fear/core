@@ -1,6 +1,6 @@
 {
   "domain": "siro",
-  "name": "SIRO",
+  "name": "SIRO Connector",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/siro",
   "requirements": ["siro==0.2", "asyncio==3.4.3"],
