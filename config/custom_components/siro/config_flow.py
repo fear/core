@@ -7,8 +7,6 @@ import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
 from .const import DOMAIN
-# from siro.siro import Bridge, Helper
-# from .siro.siro import Bridge, Helper
 
 _LOGGER = logging.getLogger(__name__)
 DATA_SCHEMA = {

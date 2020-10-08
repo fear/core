@@ -4,8 +4,8 @@ from homeassistant.const import DEVICE_CLASS_BATTERY, PERCENTAGE, DEVICE_CLASS_S
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-from siro.siro import RadioMotor
-# from .siro.siro import RadioMotor
+# from siro.siro import RadioMotor
+from .siro.siro import RadioMotor
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
