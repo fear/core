@@ -86,8 +86,8 @@ class _Device(ABC):
         logger : Logging instance (optional)
         loglevel : Loglevel for the logger.
         """
+        self._loglevel = loglevel
         self._log = self._init_log(logger, loglevel)
-        self._loglevel = 10
         self._mac = mac
         self._devicetype = devicetype
         self._name = self._get_persisted_name_from_file()
