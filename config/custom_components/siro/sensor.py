@@ -99,6 +99,9 @@ class BatterySensor(SensorBase):
         self._name = f"{self._blind.get_mac()}_battery"
         return self._status
 
+    async def async_update(self):
+        self.update()
+
     def _get_battery_level(self) -> float:
         if self._status:
             self._blind.get_logger().debug(self._status)
@@ -179,3 +182,6 @@ class RSSISensor(SensorBase):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return self.DECIBEL
+
+    async def async_update(self):
+        self.update()

@@ -182,3 +182,6 @@ class SiroCover(CoverEntity):
         self._position = self._blind.get_position()
         self._blind_online = self._blind.is_online()
         self._bridge_online = self._blind.get_bridge().is_online()
+
+    async def async_update(self):
+        self.update()
