@@ -24,9 +24,9 @@ _LOGGER = logging.getLogger(__name__)
 # (in square brackets), rather than the actual translated value. I did not attempt to
 # figure this out or look further into it.
 DATA_SCHEMA = {
-    vol.Required("name", default="SIRO Bridge"): str,
-    vol.Required("key"): str,
-    vol.Optional("bridge", default=""): str
+    vol.Required("name", description="name of the integration", default="SIRO Bridge"): str,
+    vol.Required("key", description="Connector+ account key"): str,
+    vol.Optional("bridge", description="IP of the SIRO bridge", default=""): str
 }
 
 
