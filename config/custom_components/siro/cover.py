@@ -74,7 +74,7 @@ class SiroCover(CoverEntity):
         # (rather than in the __init__)
         self._blind.register_callback(self._callback)
 
-    def _callback(self, message):
+    def _callback(self):
         self.schedule_update_ha_state(force_refresh=True)
 
     async def async_will_remove_from_hass(self):
