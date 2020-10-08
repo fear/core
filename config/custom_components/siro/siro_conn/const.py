@@ -22,8 +22,6 @@
 
 """ Constant Declaration"""
 
-
-""" Constants  """
 # Config File
 CONFIGFILE_DEVICE_NAMES = 'names.json'
 
