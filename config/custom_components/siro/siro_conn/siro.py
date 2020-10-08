@@ -47,6 +47,8 @@ from .const import (
     POSITION,
     RADIO_MOTOR,
     SEND_PORT,
+    STATE_DOWN,
+    STATE_UP,
     STATUS,
     STOP,
     UDP_TIMEOUT,
@@ -339,16 +341,17 @@ class Bridge(_Device):
         self._callback_address = self._ident_callback_address(callback_address)
         self._init_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
-        await self.listen(loop)
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
         self._firmware = self._msg_device_list['fwVersion']
         self._access_token = self._get_access_token()
         self._number_of_devices = len(self._msg_device_list['data'])-1
+        self._key_accepted = self.validate_key()
+        await self.listen(loop)
         self._devices = self.get_devices()
         self.update_status()
-        self._key_accepted = self.validate_key()
+
         self.get_logger().info(f"Bridge {self._mac} is running.")
 
     async def listen(self, loop: BaseEventLoop):
@@ -509,12 +512,26 @@ class Bridge(_Device):
         -------
         bool
         """
-        # TODO Implement sync KeyCheck
+        payload = dumps(
+            {
+                "msgType": MSG_TYPES['WRITE'],
+                "mac": self.get_mac(),
+                "deviceType": self.get_devicetype(),
+                "AccessToken": self.get_access_token(),
+                "msgID": self.get_timestamp(),
+                "data":
+                    {
+                        'operation': STATUS
+                    }
+            }
+        )
+        self.send_payload(payload)
+        data, address = self._sock.recvfrom(1024)
+        message = loads(data.decode('utf-8'))
         try:
-            status = self.get_status()
-            if status['actionResult'] == 'AccessToken error':
+            if message['actionResult'] == 'AccessToken error':
                 raise ValueError('The key was rejected!')
-        except (KeyError, Exception):
+        except (KeyError):
             return True
 
     def _init_socket(self) -> None:
@@ -725,11 +742,11 @@ class RadioMotor(_Device):
                 self._movement_state = CURRENT_STATE['State']['OPENING']
                 state_changed = True
         elif target_position == self._current_position or target_position == -1:
-            if self._current_position == 100:
+            if self._current_position == STATE_DOWN:
                 if self._movement_state != CURRENT_STATE['State']['CLOSED']:
                     self._movement_state = CURRENT_STATE['State']['CLOSED']
                     state_changed = True
-            elif self._current_position == 0:
+            elif self._current_position == STATE_UP:
                 if self._movement_state != CURRENT_STATE['State']['OPEN']:
                     self._movement_state = CURRENT_STATE['State']['OPEN']
                     state_changed = True
