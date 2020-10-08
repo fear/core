@@ -6,7 +6,6 @@ import logging
 import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
-
 from .const import DOMAIN
 # from siro.siro import Bridge, Helper
 # from .siro.siro import Bridge, Helper
@@ -24,7 +23,11 @@ _LOGGER = logging.getLogger(__name__)
 # quite work as documented and always gave me the "Localise key references" string
 # (in square brackets), rather than the actual translated value. I did not attempt to
 # figure this out or look further into it.
-DATA_SCHEMA = vol.Schema({"host": str})
+DATA_SCHEMA = {
+    vol.Required("name", default="SIRO Bridge"): str,
+    vol.Required("key"): str,
+    vol.Optional("bridge", default=""): str
+}
 
 
 async def validate_input(hass: core.HomeAssistant, data: dict):
@@ -38,8 +41,8 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     # The exceptions are defined at the end of this file, and are used in the
     # `async_step_user` method below.
     print(f"data and hass in Validate input: {data}, {hass}")
-    if len(data["host"]) < 3:
-        raise InvalidHost
+    if len(data["key"]) != 16:
+        raise InvalidKey
 
     # if not Helper.bridge_factory('30b9217c-6d18-4d').validate_key():
     #     raise CannotConnect
@@ -59,11 +62,17 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     # "Title" is what is displayed to the user for this hub device
     # It is stored internally in HA as part of the device config.
     # See `async_step_user` below for how this is used
-    return {"title": data["host"]}
+    return {
+        "title": data["host"],
+        "key": data["key"],
+        "bridge": data["bridge"]
+    }
 
 
-class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for SIRO."""
+class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """
+    Handle a config flow for SIRO.
+    """
 
     VERSION = 1
     # Pick one of the available connection classes in home assistant/config_entries.py
@@ -102,7 +111,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # If there is no user input or there were errors, show the form again, including any errors that were
         # found with the input.
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user", data_schema=vol.Schema(DATA_SCHEMA), errors=errors
         )
 
 
@@ -111,4 +120,8 @@ class CannotConnect(exceptions.HomeAssistantError):
 
 
 class InvalidHost(exceptions.HomeAssistantError):
+    """Error to indicate there is an invalid hostname."""
+
+
+class InvalidKey(exceptions.HomeAssistantError):
     """Error to indicate there is an invalid hostname."""
