@@ -72,16 +72,12 @@ class SiroCover(CoverEntity):
         # called where ever there are changes.
         # The call back registration is done once this entity is registered with HA
         # (rather than in the __init__)
-        self._blind.register_callback(self.async_write_ha_state)
-
-    async def async_write_ha_state(self):
-        self.update()
+        self._blind.register_callback(self.update)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
-        self._blind.remove_callback(self.async_write_ha_state)
-
+        self._blind.remove_callback(self.update)
 
     # A unique_id for this entity with in this domain. This means for example if you
     # have a sensor on this cover, you must ensure the value returned is unique,

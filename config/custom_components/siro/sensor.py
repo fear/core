@@ -63,10 +63,7 @@ class SensorBase(Entity):
         """Run when this Entity has been added to HA."""
         # Sensors should also register callbacks to HA when their state changes
 
-        self._blind.register_callback(self.async_write_ha_state)
-
-    async def async_write_ha_state(self):
-        self.update()
+        self._blind.register_callback(self.update)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
@@ -98,9 +95,6 @@ class BatterySensor(SensorBase):
         self._battery = self._get_battery_level()
         self._name = f"{self._blind.get_mac()}_battery"
         return self._status
-
-    async def async_update(self):
-        self.update()
 
     def _get_battery_level(self) -> float:
         if self._status:
@@ -182,6 +176,3 @@ class RSSISensor(SensorBase):
     def unit_of_measurement(self):
         """Return the unit of measurement."""
         return self.DECIBEL
-
-    async def async_update(self):
-        self.update()
