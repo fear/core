@@ -706,7 +706,7 @@ class Bridge(_Device):
         """
         return self._firmware
 
-    async def update_devices(self, message) -> None:
+    def update_devices(self, message) -> None:
         """
         Function for updating the devices. The function identifies the device with the mac and
         calls it update function.
@@ -721,7 +721,7 @@ class Bridge(_Device):
             await self.set_status(message)
         elif self.check_if_device_exist(mac):
             device = self.get_device_by_mac(mac)
-            await device.set_status(message)
+            device.set_status(message)
 
 
 class RadioMotor(_Device):
@@ -1465,7 +1465,7 @@ class _SiroUDPProtocol(DatagramProtocol):
         """
         pass
 
-    async def datagram_received(self, data, addr) -> None:
+    def datagram_received(self, data, addr) -> None:
         """
         Method which is called when a new datagram is received.
         It calls the bridge to update the corresponding devices.
@@ -1476,4 +1476,4 @@ class _SiroUDPProtocol(DatagramProtocol):
         addr : Address of the sending bridge
         """
         message = loads(data.decode('utf-8'))
-        await self._bridge.update_devices(message)
+        self._bridge.update_devices(message)
