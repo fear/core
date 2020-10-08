@@ -73,6 +73,8 @@ class SensorBase(Entity):
     def update(self) -> None:
         self._status = self._blind.get_status()
 
+    async def async_update(self):
+        self.update()
 
 class BatterySensor(SensorBase):
     """Representation of a Sensor."""

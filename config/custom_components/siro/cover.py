@@ -181,3 +181,6 @@ class SiroCover(CoverEntity):
 
     async def async_update(self):
         self.update()
+
+    async def async_update(self):
+        self.update()
