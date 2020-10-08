@@ -307,8 +307,8 @@ class _Device(ABC):
         """
         Schedule call all registered callbacks.
         """
-        print(self._callbacks)
         for callback in self._callbacks:
+            print(callback())
             callback()
 
 
