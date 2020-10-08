@@ -20,8 +20,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import asyncio
 
+from asyncio import (
+    BaseEventLoop,
+    DatagramProtocol,
+    get_event_loop,
+)
 from abc import (
     ABC
 )
@@ -36,7 +40,7 @@ from .const import (
     CONFIGFILE_DEVICE_NAMES,
     DOWN,
     LOG_FILE,
-    LOG_LEVEL,
+    LOGLEVEL,
     MSG_TYPES,
     MULTICAST_GRP,
     POSITION,
@@ -71,7 +75,7 @@ class _Device(ABC):
     """
     Abstract class which represents a SIRO device.
     """
-    def __init__(self, mac: str, devicetype: str, logger: Logger = None) -> None:
+    def __init__(self, mac: str, devicetype: str, logger: Logger = None, loglevel: int = None) -> None:
         """
         Class constructor
 
@@ -80,8 +84,10 @@ class _Device(ABC):
         mac : Device ID of the SIRO Device
         devicetype : Devicetype of the Device
         logger : Logging instance (optional)
+        loglevel : Loglevel for the logger.
         """
-        self._log = self._init_log(logger)
+        self._log = self._init_log(logger, loglevel)
+        self._loglevel = None
         self._mac = mac
         self._devicetype = devicetype
         self._name = self._get_persisted_name_from_file()
@@ -90,8 +96,7 @@ class _Device(ABC):
         self._online = True
         self._last_update = None
 
-    @staticmethod
-    def _init_log(logger_: Logger = None) -> Logger:
+    def _init_log(self, logger_: Logger = None, loglevel_: int = None) -> Logger:
         """
         Create a Logger if no instance is given
 
@@ -103,11 +108,17 @@ class _Device(ABC):
         -------
         a logging instance
         """
+        if loglevel_:
+            self._loglevel = loglevel_
+        else:
+            self._loglevel = LOGLEVEL
+
         if logger_:
+            logger_.setLevel(self._loglevel)
             return logger_
         else:
             logger = getLogger(__name__)
-            logger.setLevel(LOG_LEVEL)
+            logger.setLevel(self._loglevel)
             file_handler = FileHandler(LOG_FILE)
             formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
             file_handler.setFormatter(formatter)
@@ -280,7 +291,7 @@ class Bridge(_Device):
     controllable devices.
     """
     # noinspection
-    def __init__(self, logger: Logger = None, bridge_address: str = '') -> None:
+    def __init__(self, logger: Logger = None, bridge_address: str = '', loglevel: int = None) -> None:
         """
         Constructor for the bridge class.
 
@@ -288,8 +299,9 @@ class Bridge(_Device):
         ----------
         logger : The logging instance (optional).
         bridge_address : IP address of the bridge (optional).
+        loglevel : Loglevel for the logger.
         """
-        super().__init__('', WIFI_BRIDGE, logger)
+        super().__init__('', WIFI_BRIDGE, logger, loglevel)
         self._key: str = ''
         self._access_token: str = ''
         self._bridge_address: str = bridge_address
@@ -309,7 +321,7 @@ class Bridge(_Device):
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
 
-    async def run(self, key: str, loop: asyncio.BaseEventLoop, callback_address: str = '') -> None:
+    async def run(self, key: str, loop: BaseEventLoop, callback_address: str = '') -> None:
         """
         Starting the Bridge.
 
@@ -334,7 +346,7 @@ class Bridge(_Device):
         self.update_status()
         self._key_accepted = self.validate_key()
 
-    async def listen(self, loop: asyncio.BaseEventLoop):
+    async def listen(self, loop: BaseEventLoop):
         """
         Function for receiving all messages from the bridge.
 
@@ -537,7 +549,8 @@ class Bridge(_Device):
                     known_device['mac'],
                     known_device['deviceType'],
                     self,
-                    self._log
+                    self._log,
+                    self._loglevel
                 )
                 if not self.check_if_device_exist(known_device['mac']):
                     self._devices.append(new_device)
@@ -654,7 +667,7 @@ class RadioMotor(_Device):
     """
     Class that represents a RadioMotor. All states a device has and functions device should do are realized here.
     """
-    def __init__(self, mac: str, siro_bridge: Bridge, logger: Logger = None) -> None:
+    def __init__(self, mac: str, siro_bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         """
         Constructor of the RadioMotor device.
 
@@ -663,8 +676,9 @@ class RadioMotor(_Device):
         mac : ID of the device,
         siro_bridge : Reference to the bridge object the device belongs to.
         logger : Reference to the Logging instance (optional).
+        loglevel : Loglevel for the logger.
         """
-        super().__init__(mac, RADIO_MOTOR, logger)
+        super().__init__(mac, RADIO_MOTOR, logger, loglevel)
         self._bridge = siro_bridge
         self._type = ''
         self._operation = ''
@@ -803,7 +817,9 @@ class RadioMotor(_Device):
 class Helper(object):
     """Helper class for holding the factories and possible other tools in the future."""
     @staticmethod
-    async def bridge_factory(key: str, log: Logger = None, loop=None, bridge_address: str = '') -> Bridge:
+    async def bridge_factory(key: str, log: Logger = None,
+                             loop=None, bridge_address: str = '',
+                             loglevel: int = None) -> Bridge:
         """
         Factory for getting an bridge object.
 
@@ -813,22 +829,20 @@ class Helper(object):
         log : Logging instance (optional).
         loop : AsyncIO event loop (optional).
         bridge_address : IP address of the bridge (optional).
+        loglevel : Loglevel for the logger.
 
         Returns
         -------
         reference to an bridge object.
         """
         if not loop:
-            loop = asyncio.get_event_loop()
-        new_bridge = Bridge(
-            logger=log,
-            bridge_address=bridge_address
-        )
+            loop = get_event_loop()
+        new_bridge = Bridge(log, bridge_address, loglevel)
         await new_bridge.run(key, loop)
         return new_bridge
 
     @staticmethod
-    def device_factory(mac: str, devicetype: str, bridge: Bridge, log: Logger = None) -> _Device:
+    def device_factory(mac: str, devicetype: str, bridge: Bridge, log: Logger = None, loglevel: int = None) -> _Device:
         """
         Factory fo getting an device object.
 
@@ -838,13 +852,14 @@ class Helper(object):
         devicetype : Device type, for choosing the right subclass of device.
         bridge : The bridge the device belongs to.
         log : A logging object (optional).
+        loglevel : Loglevel for the logger.
 
         Returns
         -------
         reference to an device object.
         """
         if devicetype == RADIO_MOTOR:
-            new_device = RadioMotor(mac, bridge, log)
+            new_device = RadioMotor(mac, bridge, log, loglevel)
             return new_device
         else:
             raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
@@ -1266,7 +1281,7 @@ class _AESElectronicCodeBook(object):
         return self._bytes_to_string(result)
 
 
-class SiroUDPProtocol(asyncio.DatagramProtocol):
+class SiroUDPProtocol(DatagramProtocol):
     def __init__(self):
         """
         Constructor for the protocol class.
