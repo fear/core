@@ -801,6 +801,7 @@ class RadioMotor(_Device):
 
 
 class Helper(object):
+    """Helper class for holding the factories and possible other tools in the future."""
     @staticmethod
     async def bridge_factory(key: str, log: Logger = None, loop=None, bridge_address: str = '') -> Bridge:
         """
@@ -850,7 +851,10 @@ class Helper(object):
 
 
 class _AESElectronicCodeBook(object):
-    """Contributes to https://github.com/ricmoo/pyaes
+    """
+    Implementation of the AES encryption in ECB mode.
+    The code in this class is based on the pyaes package.
+    Contributes to https://github.com/ricmoo/pyaes
     """
 
     # Round constant words
@@ -1126,6 +1130,13 @@ class _AESElectronicCodeBook(object):
           0x5d80be9f, 0x548db591, 0x4f9aa883, 0x4697a38d]
 
     def __init__(self, cipher_key: bytes) -> None:
+        """
+        Constructor for the _AES... class.
+
+        Parameters
+        ----------
+        cipher_key : Key which is used for the encryption
+        """
         from struct import unpack
 
         rounds = 10
@@ -1197,19 +1208,31 @@ class _AESElectronicCodeBook(object):
 
     @staticmethod
     def _string_to_bytes(text: str) -> any:
+        """
+        Converts a String into an bytes object.
+        """
         if isinstance(text, bytes):
             return text
         return [ord(c) for c in text]
 
     @staticmethod
     def _compact_word(word: list) -> int:
+        """
+        Convert plaintext to (ints ^ key)
+        """
         return (word[0] << 24) | (word[1] << 16) | (word[2] << 8) | word[3]
 
     @staticmethod
     def _bytes_to_string(binary):
+        """
+        Converts an bytes object into an string object.
+        """
         return bytes(binary)
 
     def encrypt(self, text):
+        """
+        Encrypt the given text in ECB mode.
+        """
         from copy import copy
 
         byte_text = self._string_to_bytes(text)
