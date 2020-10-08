@@ -774,19 +774,21 @@ class RadioMotor(_Device):
 
         if action == DOWN:
             self._target_position = 100
+            self._set_movement_state(self._target_position)
         if action == UP:
             self._target_position = 0
+            self._set_movement_state(self._target_position)
         if action == STOP:
             self._target_position = -1
         if action == STATUS:
             self._target_position = self._current_position
+            self._set_movement_state(self._target_position)
         if action == POSITION:
             self._target_position = position
             data = {'targetPosition': position}
         else:
             data = {'operation': action}
 
-        self._set_movement_state(self._target_position)
         payload = dumps(
             {
                 "msgType": MSG_TYPES['WRITE'],
@@ -817,8 +819,8 @@ class RadioMotor(_Device):
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
                 if status['msgType'] == MSG_TYPES['REPORT']:
-                    print(f"{status['msgType']}: {status['data']}")
-                    self._set_movement_state(self._current_position)
+                    self._target_position = self._current_position
+                    self._set_movement_state(self._target_position)
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
