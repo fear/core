@@ -24,7 +24,7 @@ _LOGGER = logging.getLogger(__name__)
 # (in square brackets), rather than the actual translated value. I did not attempt to
 # figure this out or look further into it.
 DATA_SCHEMA = {
-    vol.Required("name", description="name of the integration", default="SIRO Bridge"): str,
+    vol.Required("title", description="name of the integration", default="SIRO Bridge"): str,
     vol.Required("key", description="Connector+ account key"): str,
     vol.Optional("bridge", description="IP of the SIRO bridge", default=""): str
 }
@@ -63,7 +63,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     # It is stored internally in HA as part of the device config.
     # See `async_step_user` below for how this is used
     return {
-        "title": data["host"],
+        "title": data["title"],
         "key": data["key"],
         "bridge": data["bridge"]
     }
@@ -103,7 +103,7 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # This example does not currently cover translations, see the
                 # comments on `DATA_SCHEMA` for further details.
                 # Set the error on the `host` field, not the entire form.
-                errors["host"] = "cannot_connect"
+                errors["title"] = "cannot_connect"
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"

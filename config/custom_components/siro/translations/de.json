@@ -11,7 +11,7 @@
         "step": {
             "user": {
                 "data": {
-                    "name": "Name der Integration",
+                    "title": "Name der Integration",
                     "key": "Connector+ Account-Key",
                     "bridge": "Bridge IP"
                 }
