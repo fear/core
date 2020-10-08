@@ -375,6 +375,12 @@ class Bridge(_Device):
 
         self.get_logger().info(f"Bridge {self._mac} is running.")
 
+    async def stop(self):
+        """
+        Close socket for gentle shutdown.
+        """
+        self._sock.close()
+
     async def listen(self, loop: BaseEventLoop):
         """
         Function for receiving all messages from the bridge.

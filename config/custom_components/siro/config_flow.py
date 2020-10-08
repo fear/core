@@ -47,7 +47,6 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """
         Handle the initial step.
         """
-
         errors = {}
         if user_input is not None:
             # noinspection PyBroadException
