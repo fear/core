@@ -1465,7 +1465,7 @@ class _SiroUDPProtocol(DatagramProtocol):
         """
         pass
 
-    def datagram_received(self, data, addr) -> None:
+    async def datagram_received(self, data, addr) -> None:
         """
         Method which is called when a new datagram is received.
         It calls the bridge to update the corresponding devices.
