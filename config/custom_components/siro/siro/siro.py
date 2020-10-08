@@ -308,8 +308,8 @@ class _Device(ABC):
         Schedule call all registered callbacks.
         """
         for callback in self._callbacks:
-            print( await callback())
-            await callback()
+            print(callback())
+            callback()
 
 
 class Bridge(_Device):
