@@ -461,10 +461,15 @@ class Bridge(_Device):
         """
         self._set_last_msg_status(status)
 
-        self._current_state = status['data']['currentState']
-        self._number_of_devices = status['data']['numberOfDevices']
-        self._rssi = status['data']['RSSI']
-        self.get_logger().info(f"Variables got updates for {self._mac}.")
+        if self._current_state != status['data']['currentState']:
+            self._current_state = status['data']['currentState']
+            self.get_logger().debug(f"Device {self._mac} got update for currentState: {self._current_state}.")
+        if self._number_of_devices != status['data']['numberOfDevices']:
+            self._number_of_devices = status['data']['numberOfDevices']
+            self.get_logger().info(f"Device {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
+        if self._rssi != status['data']['RSSI']:
+            self._rssi = status['data']['RSSI']
+            self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
         if self._number_of_devices == 0:
             raise UserWarning('No devices were found.')
 
@@ -736,16 +741,16 @@ class RadioMotor(_Device):
         try:
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
-                self.get_logger().info(f"Device {self._mac} got update for type: {self._type}.")
+                self.get_logger().debug(f"Device {self._mac} got update for type: {self._type}.")
             if self._operation != status['data']['operation']:
                 self._operation = status['data']['operation']
-                self.get_logger().info(f"Device {self._mac} got update for operation: {self._operation}.")
+                self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
-                self.get_logger().info(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
+                self.get_logger().debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
             if self._current_state != status['data']['currentState']:
                 self._current_state = status['data']['currentState']
                 self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
@@ -757,13 +762,13 @@ class RadioMotor(_Device):
                 self.get_logger().info(f"Device {self._mac} got update for batteryLevel: {self._battery_level}.")
             if self._wireless_mode != status['data']['wirelessMode']:
                 self._wireless_mode = status['data']['wirelessMode']
-                self.get_logger().info(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
+                self.get_logger().debug(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
             if self._rssi != status['data']['RSSI']:
                 self._rssi = status['data']['RSSI']
                 self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
             if self._last_action != status['msgType']:
                 self._last_action = status['msgType']
-                self.get_logger().info(f"Device {self._mac} got update for msgType: {self._last_action}.")
+                self.get_logger().debug(f"Device {self._mac} got update for msgType: {self._last_action}.")
         except Exception:
             raise
 
