@@ -302,12 +302,12 @@ class _Device(ABC):
         """
         self._callbacks.discard(callback)
 
-    def publish_updates(self):
+    async def publish_updates(self):
         """
         Schedule call all registered callbacks.
         """
+        print(self._callbacks)
         for callback in self._callbacks:
-            print(callback())
             callback()
 
 
@@ -504,7 +504,7 @@ class Bridge(_Device):
             raise UserWarning('No devices were found.')
 
         if state_changed:
-            self.publish_updates()
+            await self.publish_updates()
 
     def get_status(self) -> dict:
         """
@@ -787,7 +787,7 @@ class RadioMotor(_Device):
                     state_changed = True
 
         if state_changed:
-            self.publish_updates()
+            await self.publish_updates()
             self.get_logger().info(f"Device {self._mac} got update for movement state: "
                                    f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
 
@@ -885,7 +885,7 @@ class RadioMotor(_Device):
                 state_changed = True
 
             if state_changed:
-                self.publish_updates()
+                await self.publish_updates()
         except Exception:
             raise
 
