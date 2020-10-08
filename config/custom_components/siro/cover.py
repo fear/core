@@ -11,10 +11,10 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from .siro.const import DEVICE_TYPES, CURRENT_STATE
-from .siro.siro import RadioMotor
-# from siro.const import DEVICE_TYPES, CURRENT_STATE
-# from siro.siro import RadioMotor
+from siro.const import DEVICE_TYPES, CURRENT_STATE
+from siro.siro import RadioMotor
+# from .siro.const import DEVICE_TYPES, CURRENT_STATE
+# from .siro.siro import RadioMotor
 
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
