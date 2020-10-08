@@ -1,8 +1,6 @@
-"""Constants for the Detailed Hello World Push integration.
-
-based on @sillyfrog's "detailed_hello_world_push" with several changes :P ...
-https://github.com/home-assistant/example-custom-config/tree/master/custom_components/detailed_hello_world_push
-"""
+"""Constants for the Detailed Hello World Push integration."""
+# Modifications copyright (C) 2020 Felix Arnold
+# based on @sillyfrog's "detailed_hello_world_push": https://git.io/JTeqd
 
 __author__ = "Felix Arnold (@fear)"
 __copyright__ = "Copyright (c) 2020 Felix Arnold"

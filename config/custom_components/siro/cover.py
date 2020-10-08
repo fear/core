@@ -1,8 +1,6 @@
-"""Platform for SIRO cover integration.
-
-based on @sillyfrog's "detailed_hello_world_push" with several changes :P ...
-https://github.com/home-assistant/example-custom-config/tree/master/custom_components/detailed_hello_world_push
-"""
+"""Platform for SIRO cover integration."""
+# Modifications copyright (C) 2020 Felix Arnold
+# based on @sillyfrog's "detailed_hello_world_push": https://git.io/JTeqd
 
 __author__ = "Felix Arnold (@fear)"
 __copyright__ = "Copyright (c) 2020 Felix Arnold"
