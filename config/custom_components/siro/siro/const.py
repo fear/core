@@ -20,6 +20,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+__author__ = "Felix Arnold (@fear)"
+__copyright__ = "Copyright (c) 2020 Felix Arnold"
+__credits__ = ["Richard Moore (@ricmoo)", "everybody helping others on stackoverflow or somewhere else"]
+__license__ = "MIT"
+__version__ = "0.3"
+__maintainer__ = "Felix Arnold (@fear)"
+__email__ = "hello@felix-arnold.dev"
+__status__ = "Beta"
+__topic__ = "Home Automation"
+
 """ Constant Declaration"""
 
 # Config File
