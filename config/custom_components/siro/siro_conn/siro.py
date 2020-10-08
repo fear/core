@@ -803,7 +803,7 @@ class RadioMotor(_Device):
                 self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
-                self._set_movement_state(self._current_state)
+                self._set_movement_state(self._current_position)
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
