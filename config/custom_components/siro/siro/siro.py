@@ -1022,6 +1022,12 @@ class Helper(object):
         else:
             raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
 
+    def check_bridge_exist(self, addr: str = MULTICAST_GRP):
+        pass
+
+    def check_key(self, key: str):
+        pass
+
 
 class _AESElectronicCodeBook(object):
     """
