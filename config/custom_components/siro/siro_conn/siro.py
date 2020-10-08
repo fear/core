@@ -452,7 +452,8 @@ class Bridge(_Device):
             cipher_bytes = aes_ecb.encrypt(token.encode("utf8"))
             access_token = ''.join('%02x' % b for b in bytearray(cipher_bytes))
             self._access_token = access_token.upper()
-            self.get_logger().info(f"Access token is set to {self._access_token}.")
+            log_access_token = 'xxxxxxxxxxxxxxxxxxxx' + self._access_token[-12:]
+            self.get_logger().info(f"The access token is set to {log_access_token}.")
         return self._access_token
 
     def set_status(self, status: dict) -> None:
