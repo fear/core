@@ -25,7 +25,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 DATA_SCHEMA = {
-    vol.Required("title", description="name of the integration", default="SIRO Bridge"): str,
+    vol.Required("title", description="name of the integration", default="my Bridge"): str,
     vol.Required("key", description="Connector+ account key"): str,
     vol.Optional("bridge", description="IP of the SIRO bridge", default=""): str
 }
