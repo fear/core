@@ -740,7 +740,7 @@ class RadioMotor(_Device):
 
         if state_changed:
             self.get_logger().info(f"Device {self._mac} got update for movement state: "
-                                   f"{CURRENT_STATE['StateRev'][self._movement_state]}")
+                                   f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
 
     def _control_device(self, action: int, position: int = 0) -> None:
         """
