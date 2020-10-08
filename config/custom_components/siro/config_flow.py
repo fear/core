@@ -104,6 +104,8 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # comments on `DATA_SCHEMA` for further details.
                 # Set the error on the `host` field, not the entire form.
                 errors["title"] = "cannot_connect"
+            except InvalidKey:
+                errors["title"] = "wrong_key"
             except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
