@@ -786,7 +786,9 @@ class RadioMotor(_Device):
         """
         self._set_last_msg_status(status)
         try:
-            if status['data']['type'] == 'Report':
+            if status['msgType'] == 'Report':
+                print('-----------------------Report-----------------------')
+                print(status)
                 print('-----------------------Report-----------------------')
 
             if self._type != status['data']['type']:
