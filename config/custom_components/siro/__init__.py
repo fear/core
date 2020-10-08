@@ -13,13 +13,17 @@ PLATFORMS = ["cover", "sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up the SIRO component."""
+    """
+    Set up the SIRO component.
+    """
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up SIRO from a config entry."""
+    """
+    Set up SIRO from a config entry.
+    """
     hass.data[DOMAIN][entry.entry_id] = await Helper.bridge_factory(key='30b9217c-6d18-4d', loglevel=log.INFO)
     for component in PLATFORMS:
         hass.async_create_task(
@@ -29,7 +33,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Unload a config entry."""
+    """
+    Unload a config entry.
+    """
     unload_ok = all(
         await asyncio.gather(
             *[
