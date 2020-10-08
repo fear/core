@@ -702,6 +702,7 @@ class RadioMotor(_Device):
         self._wireless_mode = ''
         self._last_action = ''
         self._movement_state = ''
+        self._target_position = -1
         self.update_status()
         self.get_logger().info(f"Init for device {self._mac} is done.")
 
