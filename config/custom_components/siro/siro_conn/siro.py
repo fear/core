@@ -533,7 +533,7 @@ class Bridge(_Device):
                 raise ValueError('The key was rejected!')
         except KeyError:
             key_log = 'xxxxxxxx-' + self._key[-7:]
-            self.get_logger().error(f"The key {self._key} is valid.")
+            self.get_logger().error(f"The key {key_log} is valid.")
             return True
 
     def _init_socket(self) -> None:
