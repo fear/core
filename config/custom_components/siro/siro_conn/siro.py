@@ -531,7 +531,7 @@ class Bridge(_Device):
         try:
             if message['actionResult'] == 'AccessToken error':
                 raise ValueError('The key was rejected!')
-        except NotImplemented:
+        except KeyError:
             self.get_logger().error(f"The key is valid.")
             return True
 
