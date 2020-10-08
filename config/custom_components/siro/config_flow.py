@@ -40,7 +40,6 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     # This is a simple example to show an error in the UI for a short hostname
     # The exceptions are defined at the end of this file, and are used in the
     # `async_step_user` method below.
-    print(f"data and hass in Validate input: {data}, {hass}")
     if len(data["key"]) != 16:
         raise InvalidKey
 
@@ -93,8 +92,8 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # noinspection PyBroadException
             try:
+                print(f"user_input in step_user input: {user_input}")
                 info = await validate_input(self.hass, user_input)
-
                 return self.async_create_entry(title=info["title"], data=user_input)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
