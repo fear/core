@@ -123,7 +123,7 @@ class _Device(ABC):
             formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-            logger.critical(self._loglevel)
+            logger.info(f"loglevel ist set to: {self._loglevel}")
             return logger
 
     def _set_last_update(self) -> None:
@@ -132,6 +132,7 @@ class _Device(ABC):
         """
         from datetime import datetime
         self._last_update = datetime.now()
+        self.get_logger().debug(f"Set last update for device {self._mac} to: {self._last_update}")
 
     def _set_last_msg_status(self, msg: dict) -> None:
         """
@@ -321,6 +322,7 @@ class Bridge(_Device):
 
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
+        self.get_logger().info(f"Init for device {self._mac} done.")
 
     async def run(self, key: str, loop: BaseEventLoop, callback_address: str = '') -> None:
         """
@@ -346,6 +348,7 @@ class Bridge(_Device):
         self._devices = self.get_devices()
         self.update_status()
         self._key_accepted = self.validate_key()
+        self.get_logger().info(f"Bridge {self._mac} is running.")
 
     async def listen(self, loop: BaseEventLoop):
         """
@@ -382,6 +385,7 @@ class Bridge(_Device):
             address_ = callback_address
 
         self._log.info(f"Set callback address to: {address_}")
+        self.get_logger().info(f"Callback address is set to {address_}.")
         return address_
 
     def get_callback_address(self) -> str:
@@ -444,6 +448,7 @@ class Bridge(_Device):
             cipher_bytes = aes_ecb.encrypt(token.encode("utf8"))
             access_token = ''.join('%02x' % b for b in bytearray(cipher_bytes))
             self._access_token = access_token.upper()
+            self.get_logger().info(f"Access token is set to {self._access_token}.")
         return self._access_token
 
     def set_status(self, status: dict) -> None:
@@ -459,7 +464,7 @@ class Bridge(_Device):
         self._current_state = status['data']['currentState']
         self._number_of_devices = status['data']['numberOfDevices']
         self._rssi = status['data']['RSSI']
-
+        self.get_logger().info(f"Variables got updates for {self._mac}.")
         if self._number_of_devices == 0:
             raise UserWarning('No devices were found.')
 
@@ -517,6 +522,7 @@ class Bridge(_Device):
             s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
             s.settimeout(UDP_TIMEOUT)
             self._sock = s
+            self.get_logger().info(f"Socket is initialized for bridge {self._mac}.")
         except Exception:
             raise
 
@@ -580,7 +586,6 @@ class Bridge(_Device):
         try:
             self.get_device_by_mac(mac)
         except UserWarning:
-            self.get_logger().info(f"Got unknown device with identifier {mac}.")
             return False
         else:
             return True
@@ -692,6 +697,7 @@ class RadioMotor(_Device):
         self._last_action = ''
         self._movement_state = ''
         self.update_status()
+        self.get_logger().info(f"Init for device {self._mac} is done.")
 
     def _control_device(self, action: int, position: int = 0) -> None:
         """
@@ -738,6 +744,7 @@ class RadioMotor(_Device):
             self._wireless_mode = status['data']['wirelessMode']
             self._rssi = status['data']['RSSI']
             self._last_action = status['msgType']
+            self.get_logger().debug(f"Variables got updates for {self._mac}.")
         except Exception:
             raise
 
