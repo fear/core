@@ -1024,13 +1024,52 @@ class Helper(object):
 
     @staticmethod
     def check_bridge_exist(addr: str = MULTICAST_GRP) -> str:
+        """
+        Check is any or a given bridge exist
+
+        Parameters
+        ----------
+        addr : IP address of the bridge.
+
+        Returns
+        -------
+        the IP of the bridge.
+        """
         # TODO
         return '10.0.0.192'
 
     @staticmethod
     def check_key(key: str, bridge_ip: str) -> bool:
+        """
+        Check if the given key is valid for the bridge.
+
+        Parameters
+        ----------
+        key : key from Connector+ account
+        bridge_ip : IP address of the bridge
+
+        Returns
+        -------
+
+        """
         # TODO
         return True
+
+    @staticmethod
+    def count_devices_on_bridge(bridge_ip: str) -> int:
+        """
+        Check if the given bridge has existing devices.
+
+        Parameters
+        ----------
+        bridge_ip : IP address of the Bridge
+
+        Returns
+        -------
+        Number of Devices.
+        """
+        # TODO
+        return 4
 
 
 class _AESElectronicCodeBook(object):
