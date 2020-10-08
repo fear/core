@@ -64,6 +64,9 @@ class SensorBase(Entity):
         # Sensors should also register callbacks to HA when their state changes
         self._blind.register_callback(self.async_write_ha_state)
 
+    async def async_write_ha_state(self):
+        self.update()
+
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
