@@ -10,29 +10,18 @@ from .const import DOMAIN
 from .siro.siro import Bridge, Helper, RadioMotor
 
 
-# List of platforms to support. There should be a matching .py file for each,
-# eg <cover.py> and <sensor.py>
 PLATFORMS = ["cover", "sensor"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the SIRO component."""
-    # Ensure our name space for storing objects is a known type. A dict is
-    # common/preferred as it allows a separate instance of your class for each
-    # instance that has been created in the UI.
     hass.data.setdefault(DOMAIN, {})
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up SIRO from a config entry."""
-    # Store an instance of the "connecting" class that does the work of speaking
-    # with your actual devices.
-
     hass.data[DOMAIN][entry.entry_id] = await Helper.bridge_factory(key='30b9217c-6d18-4d', loglevel=log.INFO)
-
-    # This creates each HA object for each platform your device requires.
-    # It's done by calling the `async_setup_entry` function in each platform module.
     for component in PLATFORMS:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, component)
@@ -42,9 +31,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
-    # This is called when an entry/configured device is to be removed. The class
-    # needs to unload itself, and remove callbacks. See the classes for further
-    # details
     unload_ok = all(
         await asyncio.gather(
             *[
