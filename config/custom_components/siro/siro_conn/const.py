@@ -21,13 +21,22 @@
 # SOFTWARE.
 
 """ Constant Declaration"""
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
+
 
 """ Constants  """
 # Config File
 CONFIGFILE_DEVICE_NAMES = 'names.json'
+
+# Logging
+CRITICAL = 50
+ERROR = 40
+WARNING = 30
+INFO = 20
+DEBUG = 10
+
 LOG_FILE = 'siro.log'
 LOGLEVEL = WARNING
+
 
 # Device Types
 RADIO_MOTOR = '10000000'
