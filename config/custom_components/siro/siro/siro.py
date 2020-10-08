@@ -754,6 +754,9 @@ class RadioMotor(_Device):
         self.update_status()
         self.get_logger().info(f"Init for device {self._mac} is done.")
 
+    def get_movement_state(self):
+        return self._movement_state
+
     def _set_movement_state(self, target_position: int):
         """
         Setter for movement_state

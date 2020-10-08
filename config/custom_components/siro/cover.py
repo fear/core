@@ -11,10 +11,11 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from .siro.const import DEVICE_TYPES  # , CURRENT_STATE
+from .siro.const import DEVICE_TYPES, CURRENT_STATE
 from .siro.siro import RadioMotor
-# from siro.const import DEVICE_TYPES  # , CURRENT_STATE
+# from siro.const import DEVICE_TYPES, CURRENT_STATE
 # from siro.siro import RadioMotor
+
 
 async def async_setup_entry(hass, config_entry, async_add_devices):
     """Add cover for passed config_entry in HA."""
@@ -45,6 +46,7 @@ class SiroCover(CoverEntity):
         self._position = None
         self._blind_online = None
         self._bridge_online = None
+        self._movement_state = None
         self.update()
 
     async def async_added_to_hass(self):
@@ -96,6 +98,16 @@ class SiroCover(CoverEntity):
         state_open = 23
         return self._position > state_open
 
+    @property
+    def is_closing(self):
+        """Return if the cover is closing or not."""
+        return self._movement_state == CURRENT_STATE['State']['CLOSING']
+
+    @property
+    def is_opening(self):
+        """Return if the cover is opening or not."""
+        return self._movement_state == CURRENT_STATE['State']['OPENING']
+
     def open_cover(self, **kwargs):
         """Open the cover."""
         self._blind.move_up()
@@ -117,4 +129,5 @@ class SiroCover(CoverEntity):
         self._device_status = self._blind.get_status()
         self._position = self._blind.get_position()
         self._blind_online = self._blind.is_online()
+        self._movement_state = self._blind.get_movement_state()
         self._bridge_online = self._blind.get_bridge().is_online()
