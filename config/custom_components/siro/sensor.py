@@ -62,7 +62,8 @@ class SensorBase(Entity):
     async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
         # Sensors should also register callbacks to HA when their state changes
-        self._blind.register_callback(self.async_write_ha_state)
+
+        self._blind.register_callback(self.async_write_ha_state())
 
     async def async_write_ha_state(self):
         self.update()
