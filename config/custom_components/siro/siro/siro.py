@@ -98,6 +98,7 @@ class _Device(ABC):
         self._msg_status = None
         self._online = True
         self._last_update = None
+        self._loop = get_event_loop()
         self._callbacks = set()
 
     def _init_log(self, logger_: Logger = None, loglevel_: int = None) -> Logger:
@@ -384,7 +385,7 @@ class Bridge(_Device):
         loop : The actual event loop.
         """
         self._transport, self._protocol = await loop.create_datagram_endpoint(
-            SiroUDPProtocol,
+            _SiroUDPProtocol,
             sock=self._sock,
         )
         self._protocol.set_bridge(self)
@@ -504,7 +505,7 @@ class Bridge(_Device):
             raise UserWarning('No devices were found.')
 
         if state_changed:
-            await self.publish_updates()
+            self._loop.create_task(self.publish_updates())
 
     def get_status(self) -> dict:
         """
@@ -787,7 +788,7 @@ class RadioMotor(_Device):
                     state_changed = True
 
         if state_changed:
-            await self.publish_updates()
+            self._loop.create_task(self.publish_updates())
             self.get_logger().info(f"Device {self._mac} got update for movement state: "
                                    f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
 
@@ -885,7 +886,7 @@ class RadioMotor(_Device):
                 state_changed = True
 
             if state_changed:
-                await self.publish_updates()
+                self._loop.create_task(self.publish_updates())
         except Exception:
             raise
 
@@ -1430,7 +1431,7 @@ class _AESElectronicCodeBook(object):
         return self._bytes_to_string(result)
 
 
-class SiroUDPProtocol(DatagramProtocol):
+class _SiroUDPProtocol(DatagramProtocol):
     def __init__(self):
         """
         Constructor for the protocol class.
