@@ -553,6 +553,7 @@ class Bridge(_Device):
                     self._log,
                     self._loglevel
                 )
+                print(self._loglevel)
                 if not self.check_if_device_exist(known_device['mac']):
                     self._devices.append(new_device)
                     self.get_logger().info(f'{self._mac}: Created Device with mac {known_device["mac"]}.')
