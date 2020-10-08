@@ -531,7 +531,8 @@ class Bridge(_Device):
         try:
             if message['actionResult'] == 'AccessToken error':
                 raise ValueError('The key was rejected!')
-        except (KeyError):
+        except KeyError:
+            self.get_logger().info(f"The key is valid.")
             return True
 
     def _init_socket(self) -> None:
