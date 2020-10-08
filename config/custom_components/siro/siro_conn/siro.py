@@ -734,17 +734,36 @@ class RadioMotor(_Device):
         """
         self._set_last_msg_status(status)
         try:
-            self._type = status['data']['type']
-            self._operation = status['data']['operation']
-            self._current_position = status['data']['currentPosition']
-            self._current_angle = status['data']['currentAngle']
-            self._current_state = status['data']['currentState']
-            self._voltage_mode = status['data']['voltageMode']
-            self._battery_level = status['data']['batteryLevel']
-            self._wireless_mode = status['data']['wirelessMode']
-            self._rssi = status['data']['RSSI']
-            self._last_action = status['msgType']
-            self.get_logger().debug(f"Variables got updates for {self._mac}.")
+            if self._type != status['data']['type']:
+                self._type = status['data']['type']
+                self.get_logger().info(f"Device {self._mac} got update for type: {self._type}.")
+            if self._operation != status['data']['operation']:
+                self._operation = status['data']['operation']
+                self.get_logger().info(f"Device {self._mac} got update for operation: {self._operation}.")
+            if self._current_position != status['data']['currentPosition']:
+                self._current_position = status['data']['currentPosition']
+                self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
+            if self._current_angle != status['data']['currentAngle']:
+                self._current_angle = status['data']['currentAngle']
+                self.get_logger().info(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
+            if self._current_state != status['data']['currentState']:
+                self._current_state = status['data']['currentState']
+                self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
+            if self._voltage_mode != status['data']['voltageMode']:
+                self._voltage_mode = status['data']['voltageMode']
+                self.get_logger().info(f"Device {self._mac} got update for voltageMode: {self._voltage_mode}.")
+            if self._battery_level != status['data']['batteryLevel']:
+                self._battery_level = status['data']['batteryLevel']
+                self.get_logger().info(f"Device {self._mac} got update for batteryLevel: {self._battery_level}.")
+            if self._wireless_mode != status['data']['wirelessMode']:
+                self._wireless_mode = status['data']['wirelessMode']
+                self.get_logger().info(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
+            if self._rssi != status['data']['RSSI']:
+                self._rssi = status['data']['RSSI']
+                self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
+            if self._last_action != status['msgType']:
+                self._last_action = status['msgType']
+                self.get_logger().info(f"Device {self._mac} got update for msgType: {self._last_action}.")
         except Exception:
             raise
 
