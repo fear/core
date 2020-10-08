@@ -72,7 +72,10 @@ class SiroCover(CoverEntity):
         # called where ever there are changes.
         # The call back registration is done once this entity is registered with HA
         # (rather than in the __init__)
-        self._blind.register_callback(self.schedule_update_ha_state(force_refresh=True))
+        self._blind.register_callback(self._callback)
+
+    def _callback(self, message):
+        self.schedule_update_ha_state(force_refresh=True)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
