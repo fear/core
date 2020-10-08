@@ -12,9 +12,10 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from siro.const import DEVICE_TYPES  # , CURRENT_STATE
-from siro.siro import RadioMotor
-
+from .siro.const import DEVICE_TYPES  # , CURRENT_STATE
+from .siro.siro import RadioMotor
+# from siro.const import DEVICE_TYPES  # , CURRENT_STATE
+# from siro.siro import RadioMotor
 
 # This function is called as part of the __init__.async_setup_entry (via the
 # hass.config_entries.async_forward_entry_setup call)
@@ -72,14 +73,13 @@ class SiroCover(CoverEntity):
         # called where ever there are changes.
         # The call back registration is done once this entity is registered with HA
         # (rather than in the __init__)
-        # TODO self._blind.register_callback(self.async_write_ha_state)
-        pass
+        self._blind.register_callback(self.async_write_ha_state)
 
     async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
-        # TODO self._blind.remove_callback(self.async_write_ha_state)
-        pass
+        self._blind.remove_callback(self.async_write_ha_state)
+
 
     # A unique_id for this entity with in this domain. This means for example if you
     # have a sensor on this cover, you must ensure the value returned is unique,

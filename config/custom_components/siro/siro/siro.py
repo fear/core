@@ -98,6 +98,7 @@ class _Device(ABC):
         self._msg_status = None
         self._online = True
         self._last_update = None
+        self._callbacks = set()
 
     def _init_log(self, logger_: Logger = None, loglevel_: int = None) -> Logger:
         """
@@ -289,6 +290,25 @@ class _Device(ABC):
         from datetime import datetime
         return datetime.now().strftime("%Y%m%d%H%M%S%f")[0:17]
 
+    def register_callback(self, callback):
+        """
+        Register callback, called when Roller changes state.
+        """
+        self._callbacks.add(callback)
+
+    def remove_callback(self, callback):
+        """
+        Remove previously registered callback.
+        """
+        self._callbacks.discard(callback)
+
+    def publish_updates(self):
+        """
+        Schedule call all registered callbacks.
+        """
+        for callback in self._callbacks:
+            callback()
+
 
 class Bridge(_Device):
     """
@@ -464,19 +484,26 @@ class Bridge(_Device):
         ----------
         status : Dictionary with the new status values.
         """
+        state_changed = False
         self._set_last_msg_status(status)
 
         if self._current_state != status['data']['currentState']:
             self._current_state = status['data']['currentState']
             self.get_logger().debug(f"Bridge {self._mac} got update for currentState: {self._current_state}.")
+            state_changed = True
         if self._number_of_devices != status['data']['numberOfDevices']:
             self._number_of_devices = status['data']['numberOfDevices']
             self.get_logger().info(f"Bridge {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
+            state_changed = True
         if self._rssi != status['data']['RSSI']:
             self._rssi = status['data']['RSSI']
             self.get_logger().info(f"Bridge {self._mac} got update for RSSI: {self._rssi}.")
+            state_changed = True
         if self._number_of_devices == 0:
             raise UserWarning('No devices were found.')
+
+        if state_changed:
+            self.publish_updates()
 
     def get_status(self) -> dict:
         """
@@ -759,6 +786,7 @@ class RadioMotor(_Device):
                     state_changed = True
 
         if state_changed:
+            self.publish_updates()
             self.get_logger().info(f"Device {self._mac} got update for movement state: "
                                    f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
 
@@ -808,41 +836,55 @@ class RadioMotor(_Device):
         ----------
         status : Dictionary with new values.
         """
+        state_changed = False
         self._set_last_msg_status(status)
         try:
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
                 self.get_logger().debug(f"Radio {self._mac} got update for type: {self._type}.")
+                state_changed = True
             if self._operation != status['data']['operation']:
                 self._operation = status['data']['operation']
                 self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
+                state_changed = True
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
                 if status['msgType'] == MSG_TYPES['REPORT']:
                     self._target_position = self._current_position
                     self._set_movement_state(self._target_position)
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
+                state_changed = True
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
                 self.get_logger().debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
+                state_changed = True
             if self._current_state != status['data']['currentState']:
                 self._current_state = status['data']['currentState']
                 self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
+                state_changed = True
             if self._voltage_mode != status['data']['voltageMode']:
                 self._voltage_mode = status['data']['voltageMode']
                 self.get_logger().info(f"Device {self._mac} got update for voltageMode: {self._voltage_mode}.")
+                state_changed = True
             if self._battery_level != status['data']['batteryLevel']:
                 self._battery_level = status['data']['batteryLevel']
                 self.get_logger().info(f"Device {self._mac} got update for batteryLevel: {self._battery_level}.")
+                state_changed = True
             if self._wireless_mode != status['data']['wirelessMode']:
                 self._wireless_mode = status['data']['wirelessMode']
                 self.get_logger().debug(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
+                state_changed = True
             if self._rssi != status['data']['RSSI']:
                 self._rssi = status['data']['RSSI']
                 self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
+                state_changed = True
             if self._last_action != status['msgType']:
                 self._last_action = status['msgType']
                 self.get_logger().debug(f"Device {self._mac} got update for msgType: {self._last_action}.")
+                state_changed = True
+
+            if state_changed:
+                self.publish_updates()
         except Exception:
             raise
 
