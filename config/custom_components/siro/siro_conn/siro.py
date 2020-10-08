@@ -786,11 +786,12 @@ class RadioMotor(_Device):
         """
         self._set_last_msg_status(status)
         try:
+            if status['data']['type'] == 'Report':
+                print('-----------------------Report-----------------------')
+
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
                 self.get_logger().debug(f"Radio {self._mac} got update for type: {self._type}.")
-                if self._type == 'Report':
-                    print('report')
             if self._operation != status['data']['operation']:
                 self._operation = status['data']['operation']
                 self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
