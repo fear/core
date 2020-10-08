@@ -72,7 +72,6 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             # noinspection PyBroadException
             try:
-                print(f"user_input in step_user input: {user_input}")
                 info = await validate_input(self.hass, user_input)
                 return self.async_create_entry(title=info["title"], data=info)
             except CannotConnect:
