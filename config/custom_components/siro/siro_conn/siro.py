@@ -789,12 +789,6 @@ class RadioMotor(_Device):
         """
         self._set_last_msg_status(status)
         try:
-            if status['msgType'] == 'Report':
-                # self._target_position =
-                print('-----------------------Report-----------------------')
-                print(status)
-                print('-----------------------Report-----------------------')
-
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
                 self.get_logger().debug(f"Radio {self._mac} got update for type: {self._type}.")
