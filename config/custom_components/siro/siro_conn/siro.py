@@ -774,7 +774,6 @@ class RadioMotor(_Device):
 
         if action == DOWN:
             self._target_position = 100
-            self._set_movement_state(self._target_position)
         if action == UP:
             self._target_position = 0
         if action == STOP:
@@ -787,6 +786,7 @@ class RadioMotor(_Device):
         else:
             data = {'operation': action}
 
+        self._set_movement_state(self._target_position)
         payload = dumps(
             {
                 "msgType": MSG_TYPES['WRITE'],
@@ -798,7 +798,6 @@ class RadioMotor(_Device):
             }
         )
         self._bridge.send_payload(payload)
-        self._set_movement_state(self._target_position)
 
     def set_status(self, status: dict) -> None:
         """
