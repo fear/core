@@ -269,7 +269,7 @@ class _Device(ABC):
         """
         return self._online
 
-    def set_status(self, status: dict) -> None:
+    async def set_status(self, status: dict) -> None:
         """
         Setter for the status message. Must be implemented in the subclasses.
 
@@ -449,7 +449,7 @@ class Bridge(_Device):
             self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
             return message, address[0]
         else:
-            self.set_status(message)
+            await self.set_status(message)
             return self._init_device_list(waiting_for_response=True)
 
     def _get_access_token(self) -> str:
@@ -718,10 +718,10 @@ class Bridge(_Device):
         mac = message['mac']
         self.get_logger().debug(f"Received message: {message}")
         if mac == self._mac:
-            self.set_status(message)
+            await self.set_status(message)
         elif self.check_if_device_exist(mac):
             device = self.get_device_by_mac(mac)
-            device.set_status(message)
+            await device.set_status(message)
 
 
 class RadioMotor(_Device):
@@ -831,7 +831,7 @@ class RadioMotor(_Device):
         )
         self._bridge.send_payload(payload)
 
-    def set_status(self, status: dict) -> None:
+    async def set_status(self, status: dict) -> None:
         """
         Set the values of the status variables on base of the given message.
         Parameters
