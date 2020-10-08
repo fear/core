@@ -423,7 +423,7 @@ class Bridge(_Device):
         """
         return self._callback_address
 
-    def _init_device_list(self, waiting_for_response: bool = False) -> (dict, str):
+    async def _init_device_list(self, waiting_for_response: bool = False) -> (dict, str):
         """
         Reads the device list from the bridge.
 
@@ -706,7 +706,7 @@ class Bridge(_Device):
         """
         return self._firmware
 
-    def update_devices(self, message) -> None:
+    async def update_devices(self, message) -> None:
         """
         Function for updating the devices. The function identifies the device with the mac and
         calls it update function.
