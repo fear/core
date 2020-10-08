@@ -38,6 +38,7 @@ from json import (
 from .const import (
     CALLBACK_PORT,
     CONFIGFILE_DEVICE_NAMES,
+    CURRENT_STATE,
     DOWN,
     LOG_FILE,
     LOGLEVEL,
@@ -463,13 +464,13 @@ class Bridge(_Device):
 
         if self._current_state != status['data']['currentState']:
             self._current_state = status['data']['currentState']
-            self.get_logger().debug(f"Device {self._mac} got update for currentState: {self._current_state}.")
+            self.get_logger().debug(f"Bridge {self._mac} got update for currentState: {self._current_state}.")
         if self._number_of_devices != status['data']['numberOfDevices']:
             self._number_of_devices = status['data']['numberOfDevices']
-            self.get_logger().info(f"Device {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
+            self.get_logger().info(f"Bridge {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
         if self._rssi != status['data']['RSSI']:
             self._rssi = status['data']['RSSI']
-            self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
+            self.get_logger().info(f"Bridge {self._mac} got update for RSSI: {self._rssi}.")
         if self._number_of_devices == 0:
             raise UserWarning('No devices were found.')
 
@@ -704,6 +705,41 @@ class RadioMotor(_Device):
         self.update_status()
         self.get_logger().info(f"Init for device {self._mac} is done.")
 
+    def _set_movement_state(self, target_position: int):
+        """
+        Setter for movement_state
+
+        Parameters
+        ----------
+        target_position : Position the roller should move to in percent.
+        """
+        state_changed = False
+
+        if target_position > self._current_position:
+            if self._movement_state != CURRENT_STATE['State']['CLOSING']:
+                self._movement_state = CURRENT_STATE['State']['CLOSING']
+                state_changed = True
+        elif target_position < self._current_position:
+            if self._movement_state != CURRENT_STATE['State']['OPENING']:
+                self._movement_state = CURRENT_STATE['State']['OPENING']
+                state_changed = True
+        elif target_position == self._current_position or target_position == -1:
+            if self._current_position == 100:
+                if self._movement_state != CURRENT_STATE['State']['CLOSED']:
+                    self._movement_state = CURRENT_STATE['State']['CLOSED']
+                    state_changed = True
+            elif self._current_position == 0:
+                if self._movement_state != CURRENT_STATE['State']['OPEN']:
+                    self._movement_state = CURRENT_STATE['State']['OPEN']
+                    state_changed = True
+            else:
+                if self._movement_state != CURRENT_STATE['State']['STOP']:
+                    self._movement_state = CURRENT_STATE['State']['STOP']
+                    state_changed = True
+
+        if state_changed:
+            self.get_logger().info(f"Device {self._mac} got update for movement state: {self._movement_state}")
+
     def _control_device(self, action: int, position: int = 0) -> None:
         """
         Method for sending control requests to the bridge.
@@ -713,7 +749,16 @@ class RadioMotor(_Device):
         action : DOWN = 0, UP = 1, STOP = 2, POSITION = 3, ANGLE = 4, STATUS = 5
         position : The value of the position or the angle.
         """
+
+        if action == DOWN:
+            self._target_position = 100
+            self._set_movement_state(self._target_position)
+        if action == UP:
+            self._target_position = 0
+        if action == STOP:
+            self._target_position = -1
         if action == POSITION:
+            self._target_position = position
             data = {'targetPosition': position}
         else:
             data = {'operation': action}
@@ -729,6 +774,7 @@ class RadioMotor(_Device):
             }
         )
         self._bridge.send_payload(payload)
+        self._set_movement_state(self._target_position)
 
     def set_status(self, status: dict) -> None:
         """
@@ -741,7 +787,7 @@ class RadioMotor(_Device):
         try:
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
-                self.get_logger().debug(f"Device {self._mac} got update for type: {self._type}.")
+                self.get_logger().debug(f"Radio {self._mac} got update for type: {self._type}.")
             if self._operation != status['data']['operation']:
                 self._operation = status['data']['operation']
                 self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
@@ -753,6 +799,7 @@ class RadioMotor(_Device):
                 self.get_logger().debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
             if self._current_state != status['data']['currentState']:
                 self._current_state = status['data']['currentState']
+                self._set_movement_state(self._current_state)
                 self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
             if self._voltage_mode != status['data']['voltageMode']:
                 self._voltage_mode = status['data']['voltageMode']
