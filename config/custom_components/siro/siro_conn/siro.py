@@ -68,7 +68,19 @@ __all__ = ["Bridge", "RadioMotor", "Helper"]
 
 
 class _Device(ABC):
+    """
+    Abstract class which represents a SIRO device.
+    """
     def __init__(self, mac: str, devicetype: str, logger: Logger = None) -> None:
+        """
+        Class constructor
+
+        Parameters
+        ----------
+        mac : Device ID of the SIRO Device
+        devicetype : Devicetype of the Device
+        logger : Logging instance (optional)
+        """
         self._log = self._init_log(logger)
         self._mac = mac
         self._devicetype = devicetype
@@ -79,7 +91,18 @@ class _Device(ABC):
         self._last_update = None
 
     @staticmethod
-    def _init_log(logger_: Logger) -> Logger:
+    def _init_log(logger_: Logger = None) -> Logger:
+        """
+        Create a Logger if no instance is given
+
+        Parameters
+        ----------
+        logger_ : existing logger if available (optional)
+
+        Returns
+        -------
+        a logging instance
+        """
         if logger_:
             return logger_
         else:
@@ -92,15 +115,36 @@ class _Device(ABC):
             return logger
 
     def _set_last_update(self) -> None:
+        """
+        Set timestamp for last update.
+        """
         from datetime import datetime
         self._last_update = datetime.now()
 
     def _set_last_msg_status(self, msg: dict) -> None:
+        """
+        Save last status message in variable.
+
+        Parameters
+        ----------
+        msg : Message from the Bridge
+        """
         if msg['mac'] == self._mac:
             self._msg_status = msg
             self._set_last_update()
 
     def _get_persisted_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
+        """
+        Read readable name from local File.
+
+        Parameters
+        ----------
+        config_file : Path and name of the file.
+
+        Returns
+        -------
+        The Name of the device
+        """
         try:
             known_devices = load(open(config_file))
         except (decoder.JSONDecodeError, FileNotFoundError):
@@ -115,6 +159,14 @@ class _Device(ABC):
             return '-unknown-'
 
     def set_name(self, device_name: str, config_file: str = CONFIGFILE_DEVICE_NAMES) -> None:
+        """
+        Set name of a device and save to local file.
+
+        Parameters
+        ----------
+        device_name : Name of the device.
+        config_file : Path and name of the file.
+        """
         self._name = device_name
 
         device_exists = False
@@ -140,38 +192,104 @@ class _Device(ABC):
         self._log.debug(f'{self._mac}: Name was set to "{device_name}".')
 
     def get_name(self) -> str:
+        """
+        Getter for the name.
+
+        Returns
+        -------
+        The name of the device.
+        """
         return self._name
 
     def get_mac(self) -> str:
+        """
+        Getter for the mac.
+
+        Returns
+        -------
+        The mac of the device.
+        """
         return self._mac
 
     def get_devicetype(self):
+        """
+        Getter for the devicetype.
+
+        Returns
+        -------
+        The devicetype of the device.
+        """
         return self._devicetype
 
     def get_rssi(self) -> int:
+        """
+        Getter for the RSSI.
+
+        Returns
+        -------
+        The RSSI of the device.
+        """
         return self._rssi
 
     def get_logger(self) -> Logger:
+        """
+        Getter for the logging instance.
+        Returns
+        -------
+        The reference to the logging object.
+        """
         return self._log
 
-    def is_online(self):
+    def is_online(self) -> bool:
+        """
+        The online state.
+
+        Returns
+        -------
+        Returns the online state as bool.
+        """
         # TODO Implement Online Check
         return self._online
 
     def set_status(self, status: dict) -> None:
+        """
+        Setter for the status message. Must be implemented in the subclasses.
+
+        Parameters
+        ----------
+        status : The status message as string.
+        """
         raise NotImplemented
 
     @staticmethod
     def get_timestamp() -> str:
+        """
+        Creates a timestamp as message identifier for the bridge.
+
+        Returns
+        -------
+        Returns a timestamp as string.
+        """
         from datetime import datetime
         return datetime.now().strftime("%Y%m%d%H%M%S%f")[0:17]
 
 
 class Bridge(_Device):
-    # noinspection PyTypeChecker,PyMissingConstructor
-    def __init__(self, helper, logger: Logger = None, bridge_address: str = '') -> None:
+    """
+    Class which represents a bridge. All the communication is done vie the bridge. The Bridge holds all instances of
+    controllable devices.
+    """
+    # noinspection
+    def __init__(self, logger: Logger = None, bridge_address: str = '') -> None:
+        """
+        Constructor for the bridge class.
+
+        Parameters
+        ----------
+        logger : The logging instance (optional).
+        bridge_address : IP address of the bridge (optional).
+        """
         super().__init__('', WIFI_BRIDGE, logger)
-        self._connector: Helper = helper
         self._key: str = ''
         self._access_token: str = ''
         self._bridge_address: str = bridge_address
@@ -179,25 +297,33 @@ class Bridge(_Device):
         self._protocol_version: str = ''
         self._firmware: str = ''
         self._token: str = ''
-        self._transport = None
-        self._protocol: SiroUDPProtocol = None
+        self._transport: any = None
+        self._protocol: any = None
         self._rssi: int = 0
         self._current_state: int = 0
         self._devices: list = []
-        self._number_of_devices: int = None
-        self._key_accepted: bool = None
-        self._sock: socket = None
+        self._number_of_devices: int = 0
+        self._key_accepted: bool = True
+        self._sock: any = None
 
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
 
-    async def init(self, key: str, loop, callback_address: str = '') -> None:
+    async def run(self, key: str, loop: asyncio.BaseEventLoop, callback_address: str = '') -> None:
+        """
+        Starting the Bridge.
+
+        Parameters
+        ----------
+        key : The key of the Connector+ account.
+        loop : The actual event loop.
+        callback_address : IP address to announce as callback (optional).
+        """
         self._key = key
         self._callback_address = self._ident_callback_address(callback_address)
         self._init_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         await self.listen(loop)
-
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
@@ -208,7 +334,14 @@ class Bridge(_Device):
         self.update_status()
         self._key_accepted = self.validate_key()
 
-    async def listen(self, loop):
+    async def listen(self, loop: asyncio.BaseEventLoop):
+        """
+        Function for receiving all messages from the bridge.
+
+        Parameters
+        ----------
+        loop : The actual event loop.
+        """
         self._transport, self._protocol = await loop.create_datagram_endpoint(
             SiroUDPProtocol,
             sock=self._sock,
@@ -216,6 +349,17 @@ class Bridge(_Device):
         self._protocol.set_bridge(self)
 
     def _ident_callback_address(self, callback_address: str = "") -> str:
+        """
+        Get the local ip address from the machine.
+
+        Parameters
+        ----------
+        callback_address : Overwrite the callback address witch the given (optional)
+
+        Returns
+        -------
+        A ip address as string.
+        """
         if callback_address == '':
             s = socket(AF_INET, SOCK_DGRAM)
             s.connect(("208.67.222.222", 80))
@@ -228,12 +372,26 @@ class Bridge(_Device):
         return address_
 
     def get_callback_address(self) -> str:
+        """
+        Getter for the callback address.
+        Returns
+        -------
+        ip address of the local machine.
+        """
         return self._callback_address
 
-    def get_connector(self) -> any:
-        return self._connector
-
     def _init_device_list(self, waiting_for_response: bool = False) -> (dict, str):
+        """
+        Reads the device list from the bridge.
+
+        Parameters
+        ----------
+        waiting_for_response : Bool for recursive call.
+
+        Returns
+        -------
+        Tuple of message with known devices and the ip address of the bridge.
+        """
         if not waiting_for_response:
             payload = dumps({
                 'msgType': MSG_TYPES['LIST'],
@@ -252,6 +410,13 @@ class Bridge(_Device):
             return self._init_device_list(waiting_for_response=True)
 
     def _get_access_token(self) -> str:
+        """
+        Creates the access token from the bridge token and the key via aes ecb.
+
+        Returns
+        -------
+        Returns the access token which is needed for authentication.
+        """
         if self._access_token == '':
             key = self._key
             token = self._token
@@ -269,6 +434,13 @@ class Bridge(_Device):
         return self._access_token
 
     def set_status(self, status: dict) -> None:
+        """
+        Sets the status from the status dictionary to the variables.
+
+        Parameters
+        ----------
+        status : Dictionary with the new status values.
+        """
         self._set_last_msg_status(status)
 
         self._current_state = status['data']['currentState']
@@ -279,9 +451,18 @@ class Bridge(_Device):
             raise UserWarning('No devices were found.')
 
     def get_status(self) -> dict:
+        """
+        Getter for the status message
+        Returns
+        -------
+        Dictionary with all values.
+        """
         return self._msg_status
 
     def update_status(self) -> None:
+        """
+        Ask the bridge for a status update.
+        """
         data = {'operation': STATUS}
 
         payload = dumps(
@@ -297,6 +478,13 @@ class Bridge(_Device):
         self.send_payload(payload)
 
     def validate_key(self) -> bool:
+        """
+        Check if the given key is correct.
+
+        Returns
+        -------
+        bool
+        """
         # TODO Implement sync KeyCheck
         try:
             status = self.get_status()
@@ -306,6 +494,9 @@ class Bridge(_Device):
             return True
 
     def _init_socket(self) -> None:
+        """
+        Initialize the udp socket for the communication with the bridge
+        """
         try:
             s = socket(AF_INET, SOCK_DGRAM)
             s.bind(('', CALLBACK_PORT))
@@ -317,6 +508,13 @@ class Bridge(_Device):
             raise
 
     def send_payload(self, payload: str) -> None:
+        """
+        Sends a payload as JSON string to the bridge.
+
+        Parameters
+        ----------
+        payload : JSON sting.
+        """
         if self._bridge_address == '':
             remote_ip = MULTICAST_GRP
         else:
@@ -329,6 +527,10 @@ class Bridge(_Device):
 
     # noinspection PyTypeChecker
     def load_devices(self) -> None:
+        """
+        Reads the message with the device list and creates device instances for each entry.
+        All new devices will be appended to the device list variable.
+        """
         for known_device in self._msg_device_list["data"]:
             if known_device['deviceType'] == RADIO_MOTOR:
                 new_device = Helper.device_factory(
@@ -350,6 +552,17 @@ class Bridge(_Device):
                 )
 
     def check_if_device_exist(self, mac: str) -> bool:
+        """
+        Check if a device with a specific mac is in the device list.
+
+        Parameters
+        ----------
+        mac : ID of the device.
+
+        Returns
+        -------
+        bool: True if device exists.
+        """
         try:
             self.get_device_by_mac(mac)
         except UserWarning:
@@ -359,6 +572,14 @@ class Bridge(_Device):
             return True
 
     def get_devices(self) -> list:
+        """
+        Getter for the device list.
+        If the list is not initialized, it will be done.
+
+        Returns
+        -------
+        List of Devices.
+        """
         if self._devices:
             return self._devices
         else:
@@ -366,6 +587,17 @@ class Bridge(_Device):
             return self._devices
 
     def get_device_by_mac(self, mac: str) -> _Device:
+        """
+        Get a single device from the device list by mac.
+
+        Parameters
+        ----------
+        mac : ID of the device.
+
+        Returns
+        -------
+        The device with the given ID.
+        """
         for known_device in self._devices:
             if known_device.get_mac() == mac:
                 return known_device
@@ -373,15 +605,42 @@ class Bridge(_Device):
             raise UserWarning(f'Device with mac "{mac}" is not known.')
 
     def get_access_token(self) -> str:
+        """
+        Getter for the access token.
+
+        Returns
+        -------
+        The access token for authentication.
+        """
         return self._access_token
 
     def get_bridge_address(self) -> str:
+        """
+        Getter for die IP address of the bridge.
+        Returns
+        -------
+        IP address as string.
+        """
         return self._bridge_address
 
     def get_firmware(self) -> str:
+        """
+        Getter for the firmware version.
+        Returns
+        -------
+        The firmware version as string.
+        """
         return self._firmware
 
     def update_devices(self, message) -> None:
+        """
+        Function for updating the devices. The function identifies the device with the mac and
+        calls it update function.
+
+        Parameters
+        ----------
+        message : Message with new device states.
+        """
         mac = message['mac']
         self.get_logger().debug(f"Received message: {message}")
         if mac == self._mac:
@@ -392,7 +651,19 @@ class Bridge(_Device):
 
 
 class RadioMotor(_Device):
+    """
+    Class that represents a RadioMotor. All states a device has and functions device should do are realized here.
+    """
     def __init__(self, mac: str, siro_bridge: Bridge, logger: Logger = None) -> None:
+        """
+        Constructor of the RadioMotor device.
+
+        Parameters
+        ----------
+        mac : ID of the device,
+        siro_bridge : Reference to the bridge object the device belongs to.
+        logger : Reference to the Logging instance (optional).
+        """
         super().__init__(mac, RADIO_MOTOR, logger)
         self._bridge = siro_bridge
         self._type = ''
@@ -405,11 +676,17 @@ class RadioMotor(_Device):
         self._wireless_mode = ''
         self._last_action = ''
         self._movement_state = ''
-
-    def init(self) -> None:
         self.update_status()
 
     def _control_device(self, action: int, position: int = 0) -> None:
+        """
+        Method for sending control requests to the bridge.
+
+        Parameters
+        ----------
+        action : DOWN = 0, UP = 1, STOP = 2, POSITION = 3, ANGLE = 4, STATUS = 5
+        position : The value of the position or the angle.
+        """
         if action == POSITION:
             data = {'targetPosition': position}
         else:
@@ -427,7 +704,13 @@ class RadioMotor(_Device):
         )
         self._bridge.send_payload(payload)
 
-    def set_status(self, status) -> None:
+    def set_status(self, status: dict) -> None:
+        """
+        Set the values of the status variables on base of the given message.
+        Parameters
+        ----------
+        status : Dictionary with new values.
+        """
         self._set_last_msg_status(status)
         try:
             self._type = status['data']['type']
@@ -444,47 +727,123 @@ class RadioMotor(_Device):
             raise
 
     def update_status(self) -> None:
+        """
+        Ask bridge for an status update of the roller.
+        """
         self._control_device(STATUS)
 
     def move_down(self) -> None:
+        """
+        Ask bridge for closing the roller.
+        """
         self._control_device(DOWN)
 
     def move_up(self) -> None:
+        """
+        Ask bridge for opening the roller.
+        """
         self._control_device(UP)
 
     def move_stop(self) -> None:
+        """
+        Ask bridge for stop moving the roller.
+        """
         self._control_device(STOP)
 
     def move_to_position(self, position: int) -> None:
+        """
+        Ask bridge to move the roller to a given position.
+
+        Parameters
+        ----------
+        position : Value of the target position in percent.
+        """
         self._control_device(POSITION, position)
 
     def get_status(self) -> dict:
+        """
+        Getter for the status message.
+
+        Returns
+        -------
+        the Status message as dict.
+        """
         return self._msg_status
 
     def get_firmware(self) -> str:
+        """
+        Getter for the firmware version.
+
+        Returns
+        -------
+        the firmware version as string.
+        """
         return self._bridge.get_firmware()
 
     def get_position(self) -> int:
+        """
+        Getter for the actual position of the roller.
+
+        Returns
+        -------
+        the position of the roller in percent.
+        """
         return self._current_position
 
     def get_bridge(self) -> Bridge:
+        """
+        Getter for the bridge the device belongs to.
+        Returns
+        -------
+        the reference to the bridge object.
+        """
         return self._bridge
 
 
 class Helper(object):
     @staticmethod
     async def bridge_factory(key: str, log: Logger = None, loop=None, bridge_address: str = '') -> Bridge:
+        """
+        Factory for getting an bridge object.
+
+        Parameters
+        ----------
+        key : The key used for authentication.
+        log : Logging instance (optional).
+        loop : AsyncIO event loop (optional).
+        bridge_address : IP address of the bridge (optional).
+
+        Returns
+        -------
+        reference to an bridge object.
+        """
         if not loop:
             loop = asyncio.get_event_loop()
-        new_bridge = Bridge(Helper, log, bridge_address)
-        await new_bridge.init(key, loop)
+        new_bridge = Bridge(
+            logger=log,
+            bridge_address=bridge_address
+        )
+        await new_bridge.run(key, loop)
         return new_bridge
 
     @staticmethod
     def device_factory(mac: str, devicetype: str, bridge: Bridge, log: Logger = None) -> _Device:
+        """
+        Factory fo getting an device object.
+
+        Parameters
+        ----------
+        mac : ID of the device.
+        devicetype : Device type, for choosing the right subclass of device.
+        bridge : The bridge the device belongs to.
+        log : A logging object (optional).
+
+        Returns
+        -------
+        reference to an device object.
+        """
         if devicetype == RADIO_MOTOR:
             new_device = RadioMotor(mac, bridge, log)
-            new_device.init()
             return new_device
         else:
             raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
@@ -886,18 +1245,47 @@ class _AESElectronicCodeBook(object):
 
 class SiroUDPProtocol(asyncio.DatagramProtocol):
     def __init__(self):
+        """
+        Constructor for the protocol class.
+        """
         self._transport = None
         self._bridge = None
 
     def set_bridge(self, bridge: Bridge) -> None:
+        """
+        Setter for the bridge object.
+
+        Parameters
+        ----------
+        bridge : Reference to the bridge.
+        """
         self._bridge = bridge
 
     def connection_made(self, transport) -> None:
+        """
+        Implementation of the connection made method.
+
+        Parameters
+        ----------
+        transport : Transport object for async communication with the socket.
+        """
         self._transport = transport
 
     def connection_lost(self, exc) -> None:
-        print('Connection Lost')
+        """
+        Implementation of the connection lost method.
+        """
+        pass
 
     def datagram_received(self, data, addr) -> None:
+        """
+        Method which is called when a new datagram is received.
+        It calls the bridge to update the corresponding devices.
+
+        Parameters
+        ----------
+        data : Message as bytes
+        addr : Address of the sending bridge
+        """
         message = loads(data.decode('utf-8'))
         self._bridge.update_devices(message)
