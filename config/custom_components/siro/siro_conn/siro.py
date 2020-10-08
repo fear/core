@@ -803,13 +803,13 @@ class RadioMotor(_Device):
                 self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
+                self._set_movement_state(self._current_state)
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
                 self.get_logger().debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
             if self._current_state != status['data']['currentState']:
                 self._current_state = status['data']['currentState']
-                self._set_movement_state(self._current_state)
                 self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
             if self._voltage_mode != status['data']['voltageMode']:
                 self._voltage_mode = status['data']['voltageMode']
