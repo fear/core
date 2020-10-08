@@ -62,10 +62,9 @@ class SiroCover(CoverEntity):
         self._position = None
         self._blind_online = None
         self._bridge_online = None
-        self.added_to_hass()
         self.update()
 
-    def added_to_hass(self):
+    async def async_added_to_hass(self):
         """Run when this Entity has been added to HA."""
         # Importantly for a push integration, the module that will be getting updates
         # needs to notify HA of changes. The dummy device has a register callback
@@ -75,7 +74,7 @@ class SiroCover(CoverEntity):
         # (rather than in the __init__)
         self._blind.register_callback(self.async_write_ha_state)
 
-    def will_remove_from_hass(self):
+    async def async_will_remove_from_hass(self):
         """Entity being removed from hass."""
         # The opposite of async_added_to_hass. Remove any registered call backs here.
         self._blind.remove_callback(self.async_write_ha_state)

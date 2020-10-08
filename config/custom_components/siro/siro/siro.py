@@ -478,7 +478,7 @@ class Bridge(_Device):
             self.get_logger().info(f"The access token is set to {log_access_token}.")
         return self._access_token
 
-    def set_status(self, status: dict) -> None:
+    async def set_status(self, status: dict) -> None:
         """
         Sets the status from the status dictionary to the variables.
 
