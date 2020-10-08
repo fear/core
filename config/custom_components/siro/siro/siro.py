@@ -362,7 +362,7 @@ class Bridge(_Device):
         self._key = key
         self._callback_address = self._ident_callback_address(callback_address)
         self._init_socket()
-        self._msg_device_list, self._bridge_address = self._init_device_list()
+        self._msg_device_list, self._bridge_address = await self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
