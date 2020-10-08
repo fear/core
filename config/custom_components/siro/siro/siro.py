@@ -309,7 +309,7 @@ class _Device(ABC):
         """
         for callback in self._callbacks:
             print(callback())
-            callback()
+            await callback()
 
 
 class Bridge(_Device):
