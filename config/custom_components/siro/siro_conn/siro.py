@@ -817,6 +817,7 @@ class RadioMotor(_Device):
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
                 if status['msgType'] == MSG_TYPES['REPORT']:
+                    print(f"{status['msgType']}: {status['data']}")
                     self._set_movement_state(self._current_position)
                 self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
             if self._current_angle != status['data']['currentAngle']:
