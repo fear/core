@@ -6,7 +6,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .siro_conn.siro import Bridge, Helper, RadioMotor
+from siro.siro import Bridge, Helper, RadioMotor
 
 
 # List of platforms to support. There should be a matching .py file for each,

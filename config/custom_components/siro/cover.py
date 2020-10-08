@@ -12,8 +12,8 @@ from homeassistant.components.cover import (
 )
 
 from .const import DOMAIN
-from .siro_conn.const import DEVICE_TYPES  # , CURRENT_STATE
-from .siro_conn.siro import RadioMotor
+from siro.const import DEVICE_TYPES  # , CURRENT_STATE
+from siro.siro import RadioMotor
 
 
 # This function is called as part of the __init__.async_setup_entry (via the
@@ -158,23 +158,19 @@ class SiroCover(CoverEntity):
 
     # These methods allow HA to tell the actual device what to do. In this case, move
     # the cover to the desired position, or open and close it all the way.
-    # TODO async def async_open_cover(self, **kwargs):
     def open_cover(self, **kwargs):
         """Open the cover."""
         self._blind.move_up()
 
-    # TODO async def async_close_cover(self, **kwargs):
     def close_cover(self, **kwargs):
         """Close the cover."""
         self._blind.move_down()
 
-    # TODO async def async_set_cover_position(self, **kwargs):
     def set_cover_position(self, **kwargs):
         """Close the cover."""
         position = 100 - kwargs[ATTR_POSITION]
         self._blind.move_to_position(position)
 
-    # # TODO async def async_stop_cover(self, **kwargs):
     def stop_cover(self, **kwargs):
         """Stop the cover."""
         self._blind.move_stop()

@@ -10,7 +10,7 @@ from homeassistant.const import DEVICE_CLASS_BATTERY, PERCENTAGE, DEVICE_CLASS_S
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
-from .siro_conn.siro import RadioMotor
+from siro.siro import RadioMotor
 
 
 # See cover.py for more details.
