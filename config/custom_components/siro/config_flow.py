@@ -31,6 +31,7 @@ DATA_SCHEMA = {
 }
 
 
+# noinspection PyUnusedLocal
 async def validate_input(hass: core.HomeAssistant, data: dict):
     """
     Validate the user input allows us to connect.
