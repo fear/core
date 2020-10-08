@@ -36,7 +36,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
 class SensorBase(Entity):
     """Base representation of a Hello World Sensor."""
 
-    should_poll = True
+    should_poll = False
 
     def __init__(self, blind: RadioMotor):
         """Initialize the sensor."""

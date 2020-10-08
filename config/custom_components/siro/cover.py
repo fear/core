@@ -46,7 +46,7 @@ class SiroCover(CoverEntity):
     """Representation of a dummy Cover."""
 
     # Our dummy class is PUSH, so we tell HA that it should not be polled
-    should_poll = True
+    should_poll = False
     # The supported features of a cover are done using a bitmask. Using the constants
     # imported above, we can tell HA the features that are supported by this entity.
     # If the supported features were dynamic (ie: different depending on the external
