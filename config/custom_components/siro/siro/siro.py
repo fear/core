@@ -269,7 +269,7 @@ class _Device(ABC):
         """
         return self._online
 
-    async def set_status(self, status: dict) -> None:
+    def set_status(self, status: dict) -> None:
         """
         Setter for the status message. Must be implemented in the subclasses.
 
@@ -362,7 +362,7 @@ class Bridge(_Device):
         self._key = key
         self._callback_address = self._ident_callback_address(callback_address)
         self._init_socket()
-        self._msg_device_list, self._bridge_address = await self._init_device_list()
+        self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
@@ -423,7 +423,7 @@ class Bridge(_Device):
         """
         return self._callback_address
 
-    async def _init_device_list(self, waiting_for_response: bool = False) -> (dict, str):
+    def _init_device_list(self, waiting_for_response: bool = False) -> (dict, str):
         """
         Reads the device list from the bridge.
 
@@ -449,7 +449,7 @@ class Bridge(_Device):
             self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
             return message, address[0]
         else:
-            await self.set_status(message)
+            self.set_status(message)
             return self._init_device_list(waiting_for_response=True)
 
     def _get_access_token(self) -> str:
@@ -478,7 +478,7 @@ class Bridge(_Device):
             self.get_logger().info(f"The access token is set to {log_access_token}.")
         return self._access_token
 
-    async def set_status(self, status: dict) -> None:
+    def set_status(self, status: dict) -> None:
         """
         Sets the status from the status dictionary to the variables.
 
@@ -718,7 +718,7 @@ class Bridge(_Device):
         mac = message['mac']
         self.get_logger().debug(f"Received message: {message}")
         if mac == self._mac:
-            await self.set_status(message)
+            self.set_status(message)
         elif self.check_if_device_exist(mac):
             device = self.get_device_by_mac(mac)
             device.set_status(message)
@@ -831,7 +831,7 @@ class RadioMotor(_Device):
         )
         self._bridge.send_payload(payload)
 
-    async def set_status(self, status: dict) -> None:
+    def set_status(self, status: dict) -> None:
         """
         Set the values of the status variables on base of the given message.
         Parameters
