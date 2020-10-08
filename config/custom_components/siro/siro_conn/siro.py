@@ -147,6 +147,7 @@ class _Device(ABC):
         """
         if msg['mac'] == self._mac:
             self._msg_status = msg
+            self._online = True
             self._set_last_update()
 
     def _get_persisted_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
@@ -264,7 +265,6 @@ class _Device(ABC):
         -------
         Returns the online state as bool.
         """
-        # TODO Implement Online Check
         return self._online
 
     def set_status(self, status: dict) -> None:
