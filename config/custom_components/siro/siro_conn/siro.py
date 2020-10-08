@@ -123,6 +123,7 @@ class _Device(ABC):
             formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
+            logger.critical(self._loglevel)
             return logger
 
     def _set_last_update(self) -> None:
@@ -579,7 +580,7 @@ class Bridge(_Device):
         try:
             self.get_device_by_mac(mac)
         except UserWarning:
-            self.get_logger().warning(f"Got unknown device witch identifier {mac}.")
+            self.get_logger().info(f"Got unknown device with identifier {mac}.")
             return False
         else:
             return True
