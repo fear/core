@@ -6,7 +6,7 @@ import voluptuous as vol
 from homeassistant import config_entries, core, exceptions
 
 from .const import DOMAIN
-from .siro_conn.siro import Bridge, Helper
+# from .siro_conn.siro import Bridge, Helper
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,6 +34,7 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     # This is a simple example to show an error in the UI for a short hostname
     # The exceptions are defined at the end of this file, and are used in the
     # `async_step_user` method below.
+    print(f"data and hass in Validate input: {data}, {hass}")
     if len(data["host"]) < 3:
         raise InvalidHost
 
