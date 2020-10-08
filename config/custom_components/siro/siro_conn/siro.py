@@ -720,7 +720,7 @@ class RadioMotor(_Device):
             if self._movement_state != CURRENT_STATE['State']['CLOSING']:
                 self._movement_state = CURRENT_STATE['State']['CLOSING']
                 state_changed = True
-        elif target_position < self._current_position:
+        elif target_position < self._current_position and target_position != -1:
             if self._movement_state != CURRENT_STATE['State']['OPENING']:
                 self._movement_state = CURRENT_STATE['State']['OPENING']
                 state_changed = True
