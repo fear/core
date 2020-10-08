@@ -1476,4 +1476,4 @@ class _SiroUDPProtocol(DatagramProtocol):
         addr : Address of the sending bridge
         """
         message = loads(data.decode('utf-8'))
-        self._bridge.update_devices(message)
+        await self._bridge.update_devices(message)
