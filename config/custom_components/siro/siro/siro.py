@@ -946,7 +946,6 @@ class WiFiReceiver(_Actuator):
 class Driver(object):
     """Driver class for holding the factories and other tools."""
 
-    # class variables
     __BRIDGE: Bridge = None
     __SOCKET: socket = None
     __LOGGER: Logger = None
