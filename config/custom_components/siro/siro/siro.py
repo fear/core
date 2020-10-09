@@ -111,7 +111,7 @@ class _Device(ABC):
         loop: Asyncio event loop (optional.
         """
         self._loglevel: int = loglevel
-        self._log: Logger = Driver.get_logger(loglevel)
+        self._log: Logger = logger if logger else Driver.get_logger(loglevel)
         self._mac: str = mac
         self._devicetype: str = devicetype
         self._name: str = self._read_name_from_file()
@@ -329,10 +329,12 @@ class Bridge(_Device):
     # noinspection PyTypeChecker
     def __init__(
             self,
+            access_token: str,
             logger: Logger = None,
             bridge_address: str = '',
             loglevel: int = None,
-            loop: AbstractEventLoop = None
+            loop: AbstractEventLoop = None,
+            callback_address: str = None,
     ) -> None:
         """
         Constructor for the bridge class.
@@ -344,11 +346,11 @@ class Bridge(_Device):
         loglevel : Loglevel for the logger.
         """
         super(Bridge, self).__init__('', WIFI_BRIDGE, logger, loglevel, loop)
-        self._key: str = ''
-        self._access_token: str = ''
+        self._access_token: str = access_token
         self._bridge_address: str = bridge_address
-        self._callback_address: str = ''
-        self._protocol_version: str = ''
+        self._callback_address: str = callback_address if callback_address else Driver.get_ip()
+        self._sock: socket = ''
+        self._protocol_version = ''
         self._firmware: str = ''
         self._token: str = ''
         self._transport: any = None
@@ -358,29 +360,20 @@ class Bridge(_Device):
         self._devices: list = []
         self._number_of_devices: int = 0
         self._key_accepted: bool = True
-        self._sock: socket = None
 
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
         self.logger.info(f"Init for device {self._mac} done.")
 
-    async def run(self, key: str, callback_address: str = '') -> None:
+    async def run(self) -> None:
         """
         Starting the Bridge.
-
-        Parameters
-        ----------
-        key : The key of the Connector+ account.
-        callback_address : IP address to announce as callback (optional).
         """
-        self._key = key
-        self._callback_address = callback_address if callback_address else Driver.get_ip()
-        self._sock = Driver.get_socket()
+        self._sock: socket = Driver.get_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
         self._firmware = self._msg_device_list['fwVersion']
-        self._access_token = Driver.get_access_token(key, self._msg_device_list["token"])
         self._number_of_devices = len(self._msg_device_list['data']) - 1
         await self.listen(self._loop)
         self.devices = self._msg_device_list['data']
@@ -964,7 +957,7 @@ class Driver(object):
             key: str,
             log: Logger = None,
             loop=None,
-            bridge_address: str = '',
+            addr: str = '',
             loglevel: int = None
     ) -> Bridge:
         """
@@ -975,15 +968,17 @@ class Driver(object):
         key : The key used for authentication.
         log : Logging instance (optional).
         loop : AsyncIO event loop (optional).
-        bridge_address : IP address of the bridge (optional).
+        addr : IP address of the bridge (optional).
         loglevel : Loglevel for the logger.
 
         Returns
         -------
         reference to an bridge object.
         """
-        new_bridge = Bridge(log, bridge_address, loglevel, loop)
-        await new_bridge.run(key)
+        bridge_info = Driver.get_bridge_info(addr)
+        access_token = Driver.get_access_token(key, bridge_info['token'])
+        new_bridge = Bridge(access_token, log, bridge_info['addr'], loglevel, loop, Driver.get_ip())
+        await new_bridge.run()
         return new_bridge
 
     @staticmethod
