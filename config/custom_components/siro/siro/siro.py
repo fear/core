@@ -385,8 +385,9 @@ class Bridge(_Device):
         callback_address : IP address to announce as callback (optional).
         """
         self._key = key
-        self._callback_address = callback_address if callback_address else Helper.ip
-        self._sock = Helper.socket
+        self._callback_address = callback_address if callback_address else Helper.get_ip()
+        print(self._callback_address)
+        self._sock = Helper.get_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
@@ -1108,13 +1109,13 @@ class Helper(object):
         # TODO
         return 4
 
-    @property
-    def socket(self) -> socket:
+    @staticmethod
+    def get_socket() -> socket:
         if not Helper.__SOCKET:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.bind(('', CALLBACK_PORT))
-                mreq = inet_aton(MULTICAST_GRP) + inet_aton(self.ip)
+                mreq = inet_aton(MULTICAST_GRP) + inet_aton(Helper.get_ip())
                 sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
                 sock.settimeout(UDP_TIMEOUT)
                 Helper.__SOCKET = sock
@@ -1122,9 +1123,8 @@ class Helper(object):
                 raise
         return Helper.__SOCKET
 
-
-    @property
-    def ip(self) -> str:
+    @staticmethod
+    def get_ip() -> str:
         """
         Get the local ip address from the machine.
 
@@ -1609,4 +1609,4 @@ class _SiroUDPProtocol(DatagramProtocol):
 
 
 if __name__ == "__main__":
-    print(Helper.ip)
+    print(Helper.get_ip())
