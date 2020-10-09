@@ -113,7 +113,7 @@ class _Device(ABC):
         self._log: Logger = self._init_log(logger, loglevel)
         self._mac: str = mac
         self._devicetype: str = devicetype
-        self._name: str = self._get_persisted_name_from_file()
+        self._name: str = self._read_name_from_file()
         self._rssi: int = 0
         self._msg_status: dict = {}
         self._online: bool = True
@@ -156,7 +156,7 @@ class _Device(ABC):
         Set timestamp for last update.
         """
         self._last_update = datetime.now()
-        self.get_logger().debug(f"Set last update for device {self._mac} to: {self._last_update}")
+        self.logger.debug(f"Set last update for device {self._mac} to: {self._last_update}")
 
     def _set_last_msg_status(self, msg: dict) -> None:
         """
@@ -171,7 +171,7 @@ class _Device(ABC):
             self._online = True
             self._set_last_update()
 
-    def _get_persisted_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
+    def _read_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
         """
         Read readable name from local File.
 
@@ -196,7 +196,19 @@ class _Device(ABC):
             self._log.debug(f'{self._mac}: No Name found. Setting name to Unknown.')
             return '-unknown-'
 
-    def set_name(self, device_name: str, config_file: str = CONFIGFILE_DEVICE_NAMES) -> None:
+    @property
+    def name(self) -> str:
+        """
+        Getter for the name.
+
+        Returns
+        -------
+        The name of the device.
+        """
+        return self._name
+
+    @name.setter
+    def name(self, device_name: str, config_file: str = CONFIGFILE_DEVICE_NAMES) -> None:
         """
         Set name of a device and save to local file.
 
@@ -229,17 +241,8 @@ class _Device(ABC):
         name_file.close()
         self._log.debug(f'{self._mac}: Name was set to "{device_name}".')
 
-    def get_name(self) -> str:
-        """
-        Getter for the name.
-
-        Returns
-        -------
-        The name of the device.
-        """
-        return self._name
-
-    def get_mac(self) -> str:
+    @property
+    def mac(self) -> str:
         """
         Getter for the mac.
 
@@ -249,7 +252,8 @@ class _Device(ABC):
         """
         return self._mac
 
-    def get_devicetype(self):
+    @property
+    def devicetype(self):
         """
         Getter for the devicetype.
 
@@ -259,7 +263,8 @@ class _Device(ABC):
         """
         return self._devicetype
 
-    def get_rssi(self) -> int:
+    @property
+    def rssi(self) -> int:
         """
         Getter for the RSSI.
 
@@ -269,7 +274,8 @@ class _Device(ABC):
         """
         return self._rssi
 
-    def get_logger(self) -> Logger:
+    @property
+    def logger(self) -> Logger:
         """
         Getter for the logging instance.
         Returns
@@ -288,7 +294,15 @@ class _Device(ABC):
         """
         return self._online
 
-    def set_status(self, status: dict) -> None:
+    @property
+    def status(self) -> None:
+        """
+        Setter for the status message. Must be implemented in the subclasses.
+        """
+        raise NotImplemented
+
+    @status.setter
+    def status(self, status: dict) -> None:
         """
         Setter for the status message. Must be implemented in the subclasses.
 
@@ -360,7 +374,7 @@ class Bridge(_Device):
 
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
-        self.get_logger().info(f"Init for device {self._mac} done.")
+        self.logger.info(f"Init for device {self._mac} done.")
 
     async def run(self, key: str, callback_address: str = '') -> None:
         """
@@ -384,7 +398,7 @@ class Bridge(_Device):
         self.devices = self._msg_device_list['data']
         self.update_status()
 
-        self.get_logger().info(f"Bridge {self._mac} is running.")
+        self.logger.info(f"Bridge {self._mac} is running.")
 
     # noinspection PyMethodMayBeStatic
     async def stop(self):
@@ -441,7 +455,7 @@ class Bridge(_Device):
         message = loads(data.decode('utf-8'))
 
         if message['msgType'] == MSG_TYPES['LIST_ACK']:
-            self.get_logger().debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
+            self.logger.debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
             return message, address[0]
         else:
             self.set_status(message)
@@ -460,15 +474,15 @@ class Bridge(_Device):
 
         if self._current_state != status['data']['currentState']:
             self._current_state = status['data']['currentState']
-            self.get_logger().debug(f"Bridge {self._mac} got update for currentState: {self._current_state}.")
+            self.logger.debug(f"Bridge {self._mac} got update for currentState: {self._current_state}.")
             state_changed = True
         if self._number_of_devices != status['data']['numberOfDevices']:
             self._number_of_devices = status['data']['numberOfDevices']
-            self.get_logger().info(f"Bridge {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
+            self.logger.info(f"Bridge {self._mac} got update for numberOfDevices: {self._number_of_devices}.")
             state_changed = True
         if self._rssi != status['data']['RSSI']:
             self._rssi = status['data']['RSSI']
-            self.get_logger().info(f"Bridge {self._mac} got update for RSSI: {self._rssi}.")
+            self.logger.info(f"Bridge {self._mac} got update for RSSI: {self._rssi}.")
             state_changed = True
         if self._number_of_devices == 0:
             raise UserWarning('No devices were found.')
@@ -493,8 +507,8 @@ class Bridge(_Device):
 
         payload = {
             "msgType": MSG_TYPES['WRITE'],
-            "mac": self.get_mac(),
-            "deviceType": self.get_devicetype(),
+            "mac": self.mac,
+            "deviceType": self.devicetype,
             "AccessToken": self.access_token,
             "msgID": Driver.get_timestamp(),
             "data": data
@@ -516,7 +530,7 @@ class Bridge(_Device):
             remote_ip = self._bridge_address
         try:
             self._sock.sendto(dumps(payload).encode(), (remote_ip, SEND_PORT))
-            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {dumps(payload)}.')
+            self.logger.debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {dumps(payload)}.')
         except Exception:
             raise
 
@@ -570,13 +584,13 @@ class Bridge(_Device):
                 )
                 if not self.check_if_device_exist(known_device['mac']):
                     self._devices.append(new_device)
-                    self.get_logger().info(f'{self._mac}: Created Device with mac {known_device["mac"]}.')
+                    self.logger.info(f'{self._mac}: Created Device with mac {known_device["mac"]}.')
                 else:
-                    self.get_logger().info(f'{self._mac}: Device with mac {known_device["mac"]} already exists.')
+                    self.logger.info(f'{self._mac}: Device with mac {known_device["mac"]} already exists.')
             elif known_device['deviceType'] == WIFI_BRIDGE:
                 pass
             else:
-                self.get_logger().warning(
+                self.logger.warning(
                     f'{known_device["mac"]}: Found not supported device of Type {known_device["deviceType"]}. '
                 )
 
@@ -639,12 +653,12 @@ class Bridge(_Device):
         message : Message with new device states.
         """
         mac = message['mac']
-        self.get_logger().debug(f"Received message: {message}")
+        self.logger.debug(f"Received message: {message}")
         if mac == self._mac:
             self.set_status(message)
         elif self.check_if_device_exist(mac):
             device = self.get_device_by_mac(mac)
-            device.set_status(message)
+            device.status = message
 
 
 class _Actuator(_Device):
@@ -703,7 +717,7 @@ class RadioMotor(_Actuator):
         self._movement_state = ''
         self._target_position = -1
         self.update_status()
-        self.get_logger().info(f"Init for device {self._mac} is done.")
+        self.logger.info(f"Init for device {self._mac} is done.")
 
     def get_movement_state(self):
         return self._movement_state
@@ -742,8 +756,8 @@ class RadioMotor(_Actuator):
 
         if state_changed:
             self._loop.create_task(self.publish_updates())
-            self.get_logger().info(f"Device {self._mac} got update for movement state: "
-                                   f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
+            self.logger.info(f"Device {self._mac} got update for movement state: "
+                             f"{self._movement_state}: {CURRENT_STATE['StateRev'][self._movement_state]}")
 
     def _control_device(self, action: int, position: int = 0) -> None:
         """
@@ -774,8 +788,8 @@ class RadioMotor(_Actuator):
 
         payload = {
             "msgType": MSG_TYPES['WRITE'],
-            "mac": self.get_mac(),
-            "deviceType": self.get_devicetype(),
+            "mac": self.mac,
+            "deviceType": self.devicetype,
             "AccessToken": self._bridge.access_token,
             "msgID": Driver.get_timestamp(),
             "data": data
@@ -794,46 +808,46 @@ class RadioMotor(_Actuator):
         try:
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
-                self.get_logger().debug(f"Radio {self._mac} got update for type: {self._type}.")
+                self.logger.debug(f"Radio {self._mac} got update for type: {self._type}.")
                 state_changed = True
             if self._operation != status['data']['operation']:
                 self._operation = status['data']['operation']
-                self.get_logger().debug(f"Device {self._mac} got update for operation: {self._operation}.")
+                self.logger.debug(f"Device {self._mac} got update for operation: {self._operation}.")
                 state_changed = True
             if self._current_position != status['data']['currentPosition']:
                 self._current_position = status['data']['currentPosition']
                 if status['msgType'] == MSG_TYPES['REPORT']:
                     self._target_position = self._current_position
                     self._set_movement_state(self._target_position)
-                self.get_logger().info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
+                self.logger.info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
                 state_changed = True
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
-                self.get_logger().debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
+                self.logger.debug(f"Device {self._mac} got update for currentAngle: {self._current_angle}.")
                 state_changed = True
             if self._current_state != status['data']['currentState']:
                 self._current_state = status['data']['currentState']
-                self.get_logger().info(f"Device {self._mac} got update for currentState: {self._current_state}.")
+                self.logger.info(f"Device {self._mac} got update for currentState: {self._current_state}.")
                 state_changed = True
             if self._voltage_mode != status['data']['voltageMode']:
                 self._voltage_mode = status['data']['voltageMode']
-                self.get_logger().info(f"Device {self._mac} got update for voltageMode: {self._voltage_mode}.")
+                self.logger.info(f"Device {self._mac} got update for voltageMode: {self._voltage_mode}.")
                 state_changed = True
             if self._battery_level != status['data']['batteryLevel']:
                 self._battery_level = status['data']['batteryLevel']
-                self.get_logger().info(f"Device {self._mac} got update for batteryLevel: {self._battery_level}.")
+                self.logger.info(f"Device {self._mac} got update for batteryLevel: {self._battery_level}.")
                 state_changed = True
             if self._wireless_mode != status['data']['wirelessMode']:
                 self._wireless_mode = status['data']['wirelessMode']
-                self.get_logger().debug(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
+                self.logger.debug(f"Device {self._mac} got update for wirelessMode: {self._wireless_mode}.")
                 state_changed = True
             if self._rssi != status['data']['RSSI']:
                 self._rssi = status['data']['RSSI']
-                self.get_logger().info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
+                self.logger.info(f"Device {self._mac} got update for RSSI: {self._rssi}.")
                 state_changed = True
             if self._last_action != status['msgType']:
                 self._last_action = status['msgType']
-                self.get_logger().debug(f"Device {self._mac} got update for msgType: {self._last_action}.")
+                self.logger.debug(f"Device {self._mac} got update for msgType: {self._last_action}.")
                 state_changed = True
 
             if state_changed:
