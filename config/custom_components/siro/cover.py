@@ -90,7 +90,7 @@ class SiroCover(CoverEntity):
         """
         Return Unique ID string.
         """
-        return f"{self._blind.get_mac()}_cover"
+        return f"{self._blind.mac}_cover"
 
     @property
     def device_info(self):
@@ -98,11 +98,11 @@ class SiroCover(CoverEntity):
         Information about this device.
         """
         return {
-            "identifiers": {(DOMAIN, self._blind.get_mac())},
+            "identifiers": {(DOMAIN, self._blind.mac)},
             # If desired, the name for the device could be different to the entity
-            "name": f"{self._blind.get_mac()}_cover",
-            "sw_version": self._blind.get_firmware(),
-            "model": DEVICE_TYPES[self._blind.get_devicetype()],
+            "name": f"{self._blind.mac}_cover",
+            "sw_version": self._blind.firmware,
+            "model": DEVICE_TYPES[self._blind.devicetype],
             "manufacturer": "SIRO",
         }
 
@@ -111,7 +111,7 @@ class SiroCover(CoverEntity):
         """
         Return the name of the roller.
         """
-        return f"{self._blind.get_mac()}_cover"
+        return f"{self._blind.mac}_cover"
 
     @property
     def available(self) -> bool:
@@ -179,7 +179,7 @@ class SiroCover(CoverEntity):
         Called when there are updates.
         """
         self._device_status = self._blind.get_status()
-        self._position = self._blind.get_position()
+        self._position = self._blind.position
         self._blind_online = self._blind.is_online()
         self._movement_state = self._blind.get_movement_state()
         self._bridge_online = self._blind.get_bridge().is_online()

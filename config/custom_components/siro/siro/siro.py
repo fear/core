@@ -607,7 +607,7 @@ class Bridge(_Device):
         The device with the given ID.
         """
         for known_device in self._devices:
-            if known_device.get_mac() == mac:
+            if known_device.mac == mac:
                 return known_device
         else:
             raise UserWarning(f'Device with mac "{mac}" is not known.')
@@ -899,7 +899,8 @@ class RadioMotor(_Actuator):
         """
         return self._msg_status
 
-    def get_firmware(self) -> str:
+    @property
+    def firmware(self) -> str:
         """
         Getter for the firmware version.
 
@@ -909,7 +910,8 @@ class RadioMotor(_Actuator):
         """
         return self._bridge.firmware
 
-    def get_position(self) -> int:
+    @property
+    def position(self) -> int:
         """
         Getter for the actual position of the roller.
 
