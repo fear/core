@@ -374,7 +374,6 @@ class Bridge(_Device):
         """
         self._key = key
         self._callback_address = callback_address if callback_address else Driver.get_ip()
-        print(self._callback_address)
         self._sock = Driver.get_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
