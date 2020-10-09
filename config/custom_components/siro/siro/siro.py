@@ -44,6 +44,7 @@ from json import (
     decoder,
     dumps,
 )
+# from const import (
 from .const import (
     CALLBACK_PORT,
     CONFIGFILE_DEVICE_NAMES,
@@ -84,7 +85,7 @@ from logging import (
 from datetime import datetime
 
 
-__all__ = ["Bridge", "RadioMotor", "Helper", "Actuator"]
+__all__ = ["Bridge", "RadioMotor", "Helper", "WiFiCurtain", "WiFiMotor", "WiFiReceiver"]
 
 
 class _Device(ABC):
@@ -336,7 +337,7 @@ class Bridge(_Device):
     controllable devices.
     """
 
-    # noinspection
+    # noinspection PyTypeChecker
     def __init__(
             self,
             logger: Logger = None,
@@ -368,7 +369,7 @@ class Bridge(_Device):
         self._devices: list = []
         self._number_of_devices: int = 0
         self._key_accepted: bool = True
-        self._sock: any = None
+        self._sock: socket = None
 
         self._msg_device_list: dict = {}
         self._msg_callback: dict = {}
@@ -384,8 +385,8 @@ class Bridge(_Device):
         callback_address : IP address to announce as callback (optional).
         """
         self._key = key
-        self._callback_address = self._ident_callback_address(callback_address)
-        self._init_socket()
+        self._callback_address = callback_address if callback_address else Helper.ip
+        self._sock = Helper.socket
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._token = self._msg_device_list["token"]
@@ -419,30 +420,6 @@ class Bridge(_Device):
             sock=self._sock,
         )
         self._protocol.set_bridge(self)
-
-    def _ident_callback_address(self, callback_address: str = "") -> str:
-        """
-        Get the local ip address from the machine.
-
-        Parameters
-        ----------
-        callback_address : Overwrite the callback address witch the given (optional)
-
-        Returns
-        -------
-        A ip address as string.
-        """
-        if callback_address == '':
-            s = socket(AF_INET, SOCK_DGRAM)
-            s.connect(("208.67.222.222", 80))
-            address_ = s.getsockname()[0]
-            s.close()
-        else:
-            address_ = callback_address
-
-        self._log.info(f"Set callback address to: {address_}")
-        self.get_logger().info(f"Callback address is set to {address_}.")
-        return address_
 
     def get_callback_address(self) -> str:
         """
@@ -596,21 +573,6 @@ class Bridge(_Device):
             self.get_logger().info(f"The key {key_log} is valid.")
             return True
 
-    def _init_socket(self) -> None:
-        """
-        Initialize the udp socket for the communication with the bridge
-        """
-        try:
-            s = socket(AF_INET, SOCK_DGRAM)
-            s.bind(('', CALLBACK_PORT))
-            mreq = inet_aton(MULTICAST_GRP) + inet_aton(self._callback_address)
-            s.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
-            s.settimeout(UDP_TIMEOUT)
-            self._sock = s
-            self.get_logger().info(f"Socket is initialized for bridge {self._mac}.")
-        except Exception:
-            raise
-
     def send_payload(self, payload: str) -> None:
         """
         Sends a payload as JSON string to the bridge.
@@ -754,7 +716,7 @@ class Bridge(_Device):
             device.set_status(message)
 
 
-class Actuator(_Device):
+class _Actuator(_Device):
     """
     Class that represents a all actuators which could be connected to a Bridge.
     """
@@ -769,9 +731,8 @@ class Actuator(_Device):
         logger : Reference to the Logging instance (optional).
         loglevel : Loglevel for the logger.
         """
-        super(Actuator, self).__init__(mac, devicetype, logger, loglevel)
+        super(_Actuator, self).__init__(mac, devicetype, logger, loglevel)
         self._bridge = bridge
-
 
     def get_bridge(self) -> Bridge:
         """
@@ -783,7 +744,7 @@ class Actuator(_Device):
         return self._bridge
 
 
-class RadioMotor(Actuator):
+class RadioMotor(_Actuator):
     """
     Class that represents a RadioMotor.
     """
@@ -1016,19 +977,19 @@ class RadioMotor(Actuator):
         return self._current_position
 
 
-class WiFiCurtain(Actuator):
+class WiFiCurtain(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         super(WiFiCurtain, self).__init__(mac, WIFI_CURTAIN, logger, loglevel, bridge)
         raise NotImplementedError
 
 
-class WiFiMotor(Actuator):
+class WiFiMotor(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         super(WiFiMotor, self).__init__(mac, WIFI_MOTOR, logger, loglevel, bridge)
         raise NotImplementedError
 
 
-class WiFiReceiver(Actuator):
+class WiFiReceiver(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         super(WiFiReceiver, self).__init__(mac, WIFI_RECEIVER, logger, loglevel, bridge)
         raise NotImplementedError
@@ -1038,7 +999,9 @@ class Helper(object):
     """Helper class for holding the factories and possible other tools in the future."""
 
     # class variables
-    __BRIDGE: Bridge = None
+    BRIDGE: Bridge = None
+    __SOCKET: socket = None
+    __IP: str = None
 
     @staticmethod
     async def bridge_factory(
@@ -1063,12 +1026,9 @@ class Helper(object):
         -------
         reference to an bridge object.
         """
-        if Helper.__BRIDGE:
-            return Helper.__BRIDGE
-        else:
-            new_bridge = Bridge(log, bridge_address, loglevel, loop)
-            await new_bridge.run(key)
-            return new_bridge
+        new_bridge = Bridge(log, bridge_address, loglevel, loop)
+        await new_bridge.run(key)
+        return new_bridge
 
     @staticmethod
     def device_factory(
@@ -1147,6 +1107,41 @@ class Helper(object):
         """
         # TODO
         return 4
+
+    @property
+    def socket(self):
+        if not Helper.__SOCKET:
+            try:
+                sock = socket(AF_INET, SOCK_DGRAM)
+                sock.bind(('', CALLBACK_PORT))
+                mreq = inet_aton(MULTICAST_GRP) + inet_aton(self.ip)
+                sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
+                sock.settimeout(UDP_TIMEOUT)
+                Helper.__SOCKET = sock
+            except Exception:
+                raise
+        return Helper.__SOCKET
+
+
+    @property
+    def ip(self) -> str:
+        """
+        Get the local ip address from the machine.
+
+        Returns
+        -------
+        IP address as string.
+        """
+        if not Helper.__IP:
+            try:
+                sock = socket(AF_INET, SOCK_DGRAM)
+                sock.connect(("208.67.222.222", 80))
+                Helper.__IP = sock.getsockname()[0]
+                sock.close()
+                del sock
+            except:
+                raise
+        return Helper.__IP
 
 
 class _AESElectronicCodeBook(object):
@@ -1611,3 +1606,7 @@ class _SiroUDPProtocol(DatagramProtocol):
         """
         message = loads(data.decode('utf-8'))
         self._bridge.update_devices(message)
+
+
+if __name__ == "__main__":
+    print(Helper.ip)
