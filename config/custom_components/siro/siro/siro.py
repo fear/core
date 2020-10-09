@@ -299,7 +299,7 @@ class _Device(ABC):
         """
         Setter for the status message. Must be implemented in the subclasses.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     @status.setter
     def status(self, status: dict) -> None:
@@ -310,7 +310,7 @@ class _Device(ABC):
         ----------
         status : The status message as string.
         """
-        raise NotImplemented
+        raise NotImplementedError
 
     def register_callback(self, callback):
         """
@@ -1003,7 +1003,7 @@ class Driver(object):
             new_device = RadioMotor(mac, bridge, log, loglevel)
             return new_device
         else:
-            raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
+            raise NotImplementedError('By now there are just the 433Mhz Radio Motors implemented.')
 
     @staticmethod
     def check_bridge_exist(addr: str = None) -> bool:
