@@ -381,7 +381,7 @@ class Bridge(_Device):
         self._access_token = Driver.get_access_token(key, self._msg_device_list["token"])
         self._number_of_devices = len(self._msg_device_list['data'])-1
         await self.listen(self._loop)
-        self._devices = self.get_devices()
+        self.devices = self._msg_device_list['data']
         self.update_status()
 
         self.get_logger().info(f"Bridge {self._mac} is running.")
@@ -407,7 +407,8 @@ class Bridge(_Device):
         )
         self._protocol.set_bridge(self)
 
-    def get_callback_address(self) -> str:
+    @property
+    def callback_address(self) -> str:
         """
         Getter for the callback address.
         Returns
@@ -494,7 +495,7 @@ class Bridge(_Device):
             "msgType": MSG_TYPES['WRITE'],
             "mac": self.get_mac(),
             "deviceType": self.get_devicetype(),
-            "AccessToken": self.get_access_token(),
+            "AccessToken": self.access_token,
             "msgID": Driver.get_timestamp(),
             "data": data
         }
@@ -519,13 +520,46 @@ class Bridge(_Device):
         except Exception:
             raise
 
-    # noinspection PyTypeChecker
-    def load_devices(self) -> None:
+    def check_if_device_exist(self, mac: str) -> bool:
+        """
+        Check if a device with a specific mac is in the device list.
+
+        Parameters
+        ----------
+        mac : ID of the device.
+
+        Returns
+        -------
+        bool: True if device exists.
+        """
+        try:
+            self.get_device_by_mac(mac)
+        except UserWarning:
+            return False
+        else:
+            return True
+
+    @property
+    def devices(self) -> list:
+        """
+        Getter for the device list.
+        If the list is not initialized, it will be done.
+
+        Returns
+        -------
+        List of Devices.
+        """
+        return self._devices
+
+    @devices.setter
+    def devices(self, device_list: dict = None) -> None:
         """
         Reads the message with the device list and creates device instances for each entry.
         All new devices will be appended to the device list variable.
         """
-        for known_device in self._msg_device_list["data"]:
+        device_list = device_list if device_list else self._msg_device_list["data"]
+
+        for known_device in device_list:
             if known_device['deviceType'] == RADIO_MOTOR:
                 new_device = Driver.device_factory(
                     known_device['mac'],
@@ -546,40 +580,6 @@ class Bridge(_Device):
                     f'{known_device["mac"]}: Found not supported device of Type {known_device["deviceType"]}. '
                 )
 
-    def check_if_device_exist(self, mac: str) -> bool:
-        """
-        Check if a device with a specific mac is in the device list.
-
-        Parameters
-        ----------
-        mac : ID of the device.
-
-        Returns
-        -------
-        bool: True if device exists.
-        """
-        try:
-            self.get_device_by_mac(mac)
-        except UserWarning:
-            return False
-        else:
-            return True
-
-    def get_devices(self) -> list:
-        """
-        Getter for the device list.
-        If the list is not initialized, it will be done.
-
-        Returns
-        -------
-        List of Devices.
-        """
-        if self._devices:
-            return self._devices
-        else:
-            self.load_devices()
-            return self._devices
-
     def get_device_by_mac(self, mac: str) -> _Device:
         """
         Get a single device from the device list by mac.
@@ -598,7 +598,8 @@ class Bridge(_Device):
         else:
             raise UserWarning(f'Device with mac "{mac}" is not known.')
 
-    def get_access_token(self) -> str:
+    @property
+    def access_token(self) -> str:
         """
         Getter for the access token.
 
@@ -608,7 +609,8 @@ class Bridge(_Device):
         """
         return self._access_token
 
-    def get_bridge_address(self) -> str:
+    @property
+    def bridge_address(self) -> str:
         """
         Getter for die IP address of the bridge.
         Returns
@@ -617,7 +619,8 @@ class Bridge(_Device):
         """
         return self._bridge_address
 
-    def get_firmware(self) -> str:
+    @property
+    def firmware(self) -> str:
         """
         Getter for the firmware version.
         Returns
@@ -773,7 +776,7 @@ class RadioMotor(_Actuator):
             "msgType": MSG_TYPES['WRITE'],
             "mac": self.get_mac(),
             "deviceType": self.get_devicetype(),
-            "AccessToken": self._bridge.get_access_token(),
+            "AccessToken": self._bridge.access_token,
             "msgID": Driver.get_timestamp(),
             "data": data
         }
@@ -890,7 +893,7 @@ class RadioMotor(_Actuator):
         -------
         the firmware version as string.
         """
-        return self._bridge.get_firmware()
+        return self._bridge.firmware
 
     def get_position(self) -> int:
         """
