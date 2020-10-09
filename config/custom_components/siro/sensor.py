@@ -29,7 +29,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     bridge = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for device in bridge.get_devices():
+    for device in bridge.device:
         new_devices.append(BatterySensor(device))
         new_devices.append(RSSISensor(device))
     if new_devices:

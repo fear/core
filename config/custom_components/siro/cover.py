@@ -38,7 +38,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
     bridge = hass.data[DOMAIN][config_entry.entry_id]
 
     new_devices = []
-    for device in bridge.get_devices():
+    for device in bridge.devices:
         siro_cover = SiroCover(device)
         new_devices.append(siro_cover)
     if new_devices:
