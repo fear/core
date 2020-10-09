@@ -36,7 +36,7 @@ from asyncio import (
     get_event_loop,
 )
 from abc import (
-    ABC
+    ABC,
 )
 from json import (
     load,
@@ -83,7 +83,6 @@ from logging import (
     Formatter,
 )
 from datetime import datetime
-
 
 __all__ = ["Bridge", "RadioMotor", "Driver", "WiFiCurtain", "WiFiMotor", "WiFiReceiver"]
 
@@ -1671,11 +1670,3 @@ class _SiroUDPProtocol(DatagramProtocol):
         """
         message = loads(data.decode('utf-8'))
         self._bridge.update_devices(message)
-
-
-# if __name__ == "__main__":
-#     print(Driver.find_bridge())
-#     print(Driver.check_bridge_exist())
-#     print(Driver.count_devices_on_bridge())
-#     print(Driver.get_bridge_info())
-#     print(Driver.check_key('30b9217c-6d18-4d'))
