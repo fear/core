@@ -83,7 +83,7 @@ class SensorBase(Entity):
 
     def update(self) -> None:
         print('update...')
-        self._status = self._blind.get_status()
+        self._status = self._blind.status
 
 
 class BatterySensor(SensorBase):
@@ -107,7 +107,7 @@ class BatterySensor(SensorBase):
         """
         Called when there are updates.
         """
-        self._status = self._blind.get_status()
+        self._status = self._blind.status
         self._battery = self._get_battery_level()
         self._name = f"{self._blind.mac}_battery"
         return self._status
@@ -170,7 +170,7 @@ class RSSISensor(SensorBase):
         """
         Called when there are updates.
         """
-        self._status = self._blind.get_status()
+        self._status = self._blind.status
         self._name = f"{self._blind.mac}_rssi"
         self._rssi = self._get_rssi()
 

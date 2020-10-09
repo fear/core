@@ -178,7 +178,7 @@ class SiroCover(CoverEntity):
         """
         Called when there are updates.
         """
-        self._device_status = self._blind.get_status()
+        self._device_status = self._blind.status
         self._position = self._blind.position
         self._blind_online = self._blind.is_online()
         self._movement_state = self._blind.get_movement_state()

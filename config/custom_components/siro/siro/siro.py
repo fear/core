@@ -295,7 +295,7 @@ class _Device(ABC):
         return self._online
 
     @property
-    def status(self) -> None:
+    def status(self) -> dict:
         """
         Setter for the status message. Must be implemented in the subclasses.
         """
@@ -458,10 +458,18 @@ class Bridge(_Device):
             self.logger.debug(f'{self._mac}: Receive from {address[0]}:{address[1]}: {message}.')
             return message, address[0]
         else:
-            self.set_status(message)
+            self.status = message
             return self._init_device_list(waiting_for_response=True)
 
-    def set_status(self, status: dict) -> None:
+    @property
+    def status(self) -> dict:
+        """
+        Setter for the status message. Must be implemented in the subclasses.
+        """
+        return self._msg_status
+
+    @status.setter
+    def status(self, status: dict) -> None:
         """
         Sets the status from the status dictionary to the variables.
 
@@ -489,15 +497,6 @@ class Bridge(_Device):
 
         if state_changed:
             self._loop.create_task(self.publish_updates())
-
-    def get_status(self) -> dict:
-        """
-        Getter for the status message
-        Returns
-        -------
-        Dictionary with all values.
-        """
-        return self._msg_status
 
     def update_status(self) -> None:
         """
@@ -655,13 +654,13 @@ class Bridge(_Device):
         mac = message['mac']
         self.logger.debug(f"Received message: {message}")
         if mac == self._mac:
-            self.set_status(message)
+            self.status = message
         elif self.check_if_device_exist(mac):
             device = self.get_device_by_mac(mac)
             device.status = message
 
 
-class _Actuator(_Device):
+class _Actuator(_Device, ABC):
     """
     Class that represents a all actuators which could be connected to a Bridge.
     """
@@ -797,7 +796,15 @@ class RadioMotor(_Actuator):
         }
         self._bridge.send_payload(payload)
 
-    def set_status(self, status: dict) -> None:
+    @property
+    def status(self) -> dict:
+        """
+        Get the values of the status variable.
+        """
+        return self._msg_status
+
+    @status.setter
+    def status(self, status: dict) -> None:
         """
         Set the values of the status variables on base of the given message.
         Parameters
@@ -890,16 +897,6 @@ class RadioMotor(_Actuator):
         """
         self._control_device(POSITION, position)
 
-    def get_status(self) -> dict:
-        """
-        Getter for the status message.
-
-        Returns
-        -------
-        the Status message as dict.
-        """
-        return self._msg_status
-
     @property
     def firmware(self) -> str:
         """
@@ -924,9 +921,14 @@ class RadioMotor(_Actuator):
 
 
 class WiFiCurtain(_Actuator):
+
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         super(WiFiCurtain, self).__init__(mac, WIFI_CURTAIN, logger, loglevel, bridge)
         raise NotImplementedError
+
+    @property
+    def status(self) -> dict:
+        return self._msg_status
 
 
 class WiFiMotor(_Actuator):
@@ -934,11 +936,19 @@ class WiFiMotor(_Actuator):
         super(WiFiMotor, self).__init__(mac, WIFI_MOTOR, logger, loglevel, bridge)
         raise NotImplementedError
 
+    @property
+    def status(self) -> dict:
+        return self._msg_status
+
 
 class WiFiReceiver(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         super(WiFiReceiver, self).__init__(mac, WIFI_RECEIVER, logger, loglevel, bridge)
         raise NotImplementedError
+
+    @property
+    def status(self) -> dict:
+        return self._msg_status
 
 
 class Driver(object):

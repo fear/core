@@ -71,8 +71,6 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return self.async_create_entry(title=info["title"], data=info)
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except InvalidHost:
-                errors["title"] = "cannot_connect"
             except InvalidKey:
                 errors["title"] = "wrong_key"
             except Exception:
@@ -86,6 +84,7 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
+
 
 class InvalidKey(exceptions.HomeAssistantError):
     """Error to indicate there is an invalid hostname."""
