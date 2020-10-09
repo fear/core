@@ -31,7 +31,7 @@ __status__ = "Beta"
 __topic__ = "Home Automation"
 
 from asyncio import (
-    BaseEventLoop,
+    AbstractEventLoop,
     DatagramProtocol,
     get_event_loop,
 )
@@ -63,6 +63,9 @@ from .const import (
     UDP_TIMEOUT,
     UP,
     WIFI_BRIDGE,
+    WIFI_CURTAIN,
+    WIFI_MOTOR,
+    WIFI_RECEIVER,
 )
 from socket import (
     AF_INET,
@@ -78,16 +81,23 @@ from logging import (
     FileHandler,
     Formatter,
 )
+from datetime import datetime
 
 
-__all__ = ["Bridge", "RadioMotor", "Helper"]
+__all__ = ["Bridge", "RadioMotor", "Helper", "Actuator"]
 
 
 class _Device(ABC):
     """
     Abstract class which represents a SIRO device.
     """
-    def __init__(self, mac: str, devicetype: str, logger: Logger = None, loglevel: int = None) -> None:
+    def __init__(
+            self, mac: str,
+            devicetype: str,
+            logger: Logger = None,
+            loglevel: int = None,
+            loop: AbstractEventLoop = None
+    ) -> None:
         """
         Class constructor
 
@@ -96,18 +106,19 @@ class _Device(ABC):
         mac : Device ID of the SIRO Device
         devicetype : Devicetype of the Device
         logger : Logging instance (optional)
-        loglevel : Loglevel for the logger.
+        loglevel : Loglevel for the logger (optional).
+        loop: Asyncio event loop (optional.
         """
-        self._loglevel = loglevel
-        self._log = self._init_log(logger, loglevel)
-        self._mac = mac
-        self._devicetype = devicetype
-        self._name = self._get_persisted_name_from_file()
-        self._rssi = None
-        self._msg_status = None
-        self._online = True
-        self._last_update = None
-        self._loop = get_event_loop()
+        self._loglevel: int = loglevel
+        self._log: Logger = self._init_log(logger, loglevel)
+        self._mac: str = mac
+        self._devicetype: str = devicetype
+        self._name: str = self._get_persisted_name_from_file()
+        self._rssi: int = 0
+        self._msg_status: dict = {}
+        self._online: bool = True
+        self._last_update: datetime = datetime.fromordinal(1)
+        self._loop: AbstractEventLoop = loop if loop else get_event_loop()
         self._callbacks = set()
 
     def _init_log(self, logger_: Logger = None, loglevel_: int = None) -> Logger:
@@ -144,7 +155,6 @@ class _Device(ABC):
         """
         Set timestamp for last update.
         """
-        from datetime import datetime
         self._last_update = datetime.now()
         self.get_logger().debug(f"Set last update for device {self._mac} to: {self._last_update}")
 
@@ -325,8 +335,15 @@ class Bridge(_Device):
     Class which represents a bridge. All the communication is done vie the bridge. The Bridge holds all instances of
     controllable devices.
     """
+
     # noinspection
-    def __init__(self, logger: Logger = None, bridge_address: str = '', loglevel: int = None) -> None:
+    def __init__(
+            self,
+            logger: Logger = None,
+            bridge_address: str = '',
+            loglevel: int = None,
+            loop: AbstractEventLoop = None
+    ) -> None:
         """
         Constructor for the bridge class.
 
@@ -336,7 +353,7 @@ class Bridge(_Device):
         bridge_address : IP address of the bridge (optional).
         loglevel : Loglevel for the logger.
         """
-        super().__init__('', WIFI_BRIDGE, logger, loglevel)
+        super(Bridge, self).__init__('', WIFI_BRIDGE, logger, loglevel, loop)
         self._key: str = ''
         self._access_token: str = ''
         self._bridge_address: str = bridge_address
@@ -357,14 +374,13 @@ class Bridge(_Device):
         self._msg_callback: dict = {}
         self.get_logger().info(f"Init for device {self._mac} done.")
 
-    async def run(self, key: str, loop: BaseEventLoop, callback_address: str = '') -> None:
+    async def run(self, key: str, callback_address: str = '') -> None:
         """
         Starting the Bridge.
 
         Parameters
         ----------
         key : The key of the Connector+ account.
-        loop : The actual event loop.
         callback_address : IP address to announce as callback (optional).
         """
         self._key = key
@@ -378,7 +394,7 @@ class Bridge(_Device):
         self._access_token = self._get_access_token()
         self._number_of_devices = len(self._msg_device_list['data'])-1
         self._key_accepted = self.validate_key()
-        await self.listen(loop)
+        await self.listen(self._loop)
         self._devices = self.get_devices()
         self.update_status()
 
@@ -390,7 +406,7 @@ class Bridge(_Device):
         """
         self._sock.close()
 
-    async def listen(self, loop: BaseEventLoop):
+    async def listen(self, loop: AbstractEventLoop):
         """
         Function for receiving all messages from the bridge.
 
@@ -738,23 +754,51 @@ class Bridge(_Device):
             device.set_status(message)
 
 
-class RadioMotor(_Device):
+class Actuator(_Device):
     """
-    Class that represents a RadioMotor. All states a device has and functions device should do are realized here.
+    Class that represents a all actuators which could be connected to a Bridge.
     """
-    def __init__(self, mac: str, siro_bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
+    def __init__(self, mac: str, devicetype: str, logger: Logger, loglevel: int, bridge: Bridge):
+        """
+
+        Parameters
+        ----------
+        mac : ID of the device,
+        devicetype : Type of the device
+        bridge : Reference to the bridge object the device belongs to.
+        logger : Reference to the Logging instance (optional).
+        loglevel : Loglevel for the logger.
+        """
+        super(Actuator, self).__init__(mac, devicetype, logger, loglevel)
+        self._bridge = bridge
+
+
+    def get_bridge(self) -> Bridge:
+        """
+        Getter for the bridge the device belongs to.
+        Returns
+        -------
+        the reference to the bridge object.
+        """
+        return self._bridge
+
+
+class RadioMotor(Actuator):
+    """
+    Class that represents a RadioMotor.
+    """
+    def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         """
         Constructor of the RadioMotor device.
 
         Parameters
         ----------
         mac : ID of the device,
-        siro_bridge : Reference to the bridge object the device belongs to.
+        bridge : Reference to the bridge object the device belongs to.
         logger : Reference to the Logging instance (optional).
         loglevel : Loglevel for the logger.
         """
-        super().__init__(mac, RADIO_MOTOR, logger, loglevel)
-        self._bridge = siro_bridge
+        super(RadioMotor, self).__init__(mac, RADIO_MOTOR, logger, loglevel, bridge)
         self._type = ''
         self._operation = ''
         self._current_position = 0
@@ -971,22 +1015,39 @@ class RadioMotor(_Device):
         """
         return self._current_position
 
-    def get_bridge(self) -> Bridge:
-        """
-        Getter for the bridge the device belongs to.
-        Returns
-        -------
-        the reference to the bridge object.
-        """
-        return self._bridge
+
+class WiFiCurtain(Actuator):
+    def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
+        super(WiFiCurtain, self).__init__(mac, WIFI_CURTAIN, logger, loglevel, bridge)
+        raise NotImplementedError
+
+
+class WiFiMotor(Actuator):
+    def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
+        super(WiFiMotor, self).__init__(mac, WIFI_MOTOR, logger, loglevel, bridge)
+        raise NotImplementedError
+
+
+class WiFiReceiver(Actuator):
+    def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
+        super(WiFiReceiver, self).__init__(mac, WIFI_RECEIVER, logger, loglevel, bridge)
+        raise NotImplementedError
 
 
 class Helper(object):
     """Helper class for holding the factories and possible other tools in the future."""
+
+    # class variables
+    __BRIDGE: Bridge = None
+
     @staticmethod
-    async def bridge_factory(key: str, log: Logger = None,
-                             loop=None, bridge_address: str = '',
-                             loglevel: int = None) -> Bridge:
+    async def bridge_factory(
+            key: str,
+            log: Logger = None,
+            loop=None,
+            bridge_address: str = '',
+            loglevel: int = None
+    ) -> Bridge:
         """
         Factory for getting an bridge object.
 
@@ -1002,14 +1063,21 @@ class Helper(object):
         -------
         reference to an bridge object.
         """
-        if not loop:
-            loop = get_event_loop()
-        new_bridge = Bridge(log, bridge_address, loglevel)
-        await new_bridge.run(key, loop)
-        return new_bridge
+        if Helper.__BRIDGE:
+            return Helper.__BRIDGE
+        else:
+            new_bridge = Bridge(log, bridge_address, loglevel, loop)
+            await new_bridge.run(key)
+            return new_bridge
 
     @staticmethod
-    def device_factory(mac: str, devicetype: str, bridge: Bridge, log: Logger = None, loglevel: int = None) -> _Device:
+    def device_factory(
+            mac: str,
+            devicetype: str,
+            bridge: Bridge,
+            log: Logger = None,
+            loglevel: int = None
+    ) -> _Device:
         """
         Factory fo getting an device object.
 
