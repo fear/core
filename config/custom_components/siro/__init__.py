@@ -22,7 +22,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 # from siro.siro import Bridge, Helper, RadioMotor
-from .siro.siro import Bridge, Helper, RadioMotor
+from .siro.siro import Bridge, Driver, RadioMotor
 
 PLATFORMS = ["cover", "sensor"]
 
@@ -40,7 +40,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     Set up SIRO from a config entry.
     """
-    hass.data[DOMAIN][entry.entry_id] = await Helper.bridge_factory(
+    hass.data[DOMAIN][entry.entry_id] = await Driver.bridge_factory(
         key=entry.data['key'],
         bridge_address=entry.data['bridge'],
         loglevel=log.INFO

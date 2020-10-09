@@ -85,7 +85,7 @@ from logging import (
 from datetime import datetime
 
 
-__all__ = ["Bridge", "RadioMotor", "Helper", "WiFiCurtain", "WiFiMotor", "WiFiReceiver"]
+__all__ = ["Bridge", "RadioMotor", "Driver", "WiFiCurtain", "WiFiMotor", "WiFiReceiver"]
 
 
 class _Device(ABC):
@@ -299,18 +299,6 @@ class _Device(ABC):
         """
         raise NotImplemented
 
-    @staticmethod
-    def get_timestamp() -> str:
-        """
-        Creates a timestamp as message identifier for the bridge.
-
-        Returns
-        -------
-        Returns a timestamp as string.
-        """
-        from datetime import datetime
-        return datetime.now().strftime("%Y%m%d%H%M%S%f")[0:17]
-
     def register_callback(self, callback):
         """
         Register callback, called when Roller changes state.
@@ -385,28 +373,27 @@ class Bridge(_Device):
         callback_address : IP address to announce as callback (optional).
         """
         self._key = key
-        self._callback_address = callback_address if callback_address else Helper.get_ip()
+        self._callback_address = callback_address if callback_address else Driver.get_ip()
         print(self._callback_address)
-        self._sock = Helper.get_socket()
+        self._sock = Driver.get_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
-        self._token = self._msg_device_list["token"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
         self._firmware = self._msg_device_list['fwVersion']
-        self._access_token = self._get_access_token()
+        self._access_token = Driver.get_access_token(key, self._msg_device_list["token"])
         self._number_of_devices = len(self._msg_device_list['data'])-1
-        self._key_accepted = self.validate_key()
         await self.listen(self._loop)
         self._devices = self.get_devices()
         self.update_status()
 
         self.get_logger().info(f"Bridge {self._mac} is running.")
 
+    # noinspection PyMethodMayBeStatic
     async def stop(self):
         """
         Close socket for gentle shutdown.
         """
-        self._sock.close()
+        Driver.close_socket()
 
     async def listen(self, loop: AbstractEventLoop):
         """
@@ -444,10 +431,11 @@ class Bridge(_Device):
         Tuple of message with known devices and the ip address of the bridge.
         """
         if not waiting_for_response:
-            payload = dumps({
+            payload = {
                 'msgType': MSG_TYPES['LIST'],
-                'msgID': self.get_timestamp()}
-            )
+                'msgID': Driver.get_timestamp()
+            }
+
             self.send_payload(payload)
 
         data, address = self._sock.recvfrom(1024)
@@ -459,32 +447,6 @@ class Bridge(_Device):
         else:
             self.set_status(message)
             return self._init_device_list(waiting_for_response=True)
-
-    def _get_access_token(self) -> str:
-        """
-        Creates the access token from the bridge token and the key via aes ecb.
-
-        Returns
-        -------
-        Returns the access token which is needed for authentication.
-        """
-        if self._access_token == '':
-            key = self._key
-            token = self._token
-
-            if len(key) != 16:
-                raise Exception('The Key seems broken.')
-
-            cipher_key = bytearray()
-            cipher_key.extend(map(ord, key))
-
-            aes_ecb = _AESElectronicCodeBook(cipher_key)
-            cipher_bytes = aes_ecb.encrypt(token.encode("utf8"))
-            access_token = ''.join('%02x' % b for b in bytearray(cipher_bytes))
-            self._access_token = access_token.upper()
-            log_access_token = 'xxxxxxxxxxxxxxxxxxxx' + self._access_token[-12:]
-            self.get_logger().info(f"The access token is set to {log_access_token}.")
-        return self._access_token
 
     def set_status(self, status: dict) -> None:
         """
@@ -530,51 +492,18 @@ class Bridge(_Device):
         """
         data = {'operation': STATUS}
 
-        payload = dumps(
-            {
-                "msgType": MSG_TYPES['WRITE'],
-                "mac": self.get_mac(),
-                "deviceType": self.get_devicetype(),
-                "AccessToken": self.get_access_token(),
-                "msgID": self.get_timestamp(),
-                "data": data
-            }
-        )
+        payload = {
+            "msgType": MSG_TYPES['WRITE'],
+            "mac": self.get_mac(),
+            "deviceType": self.get_devicetype(),
+            "AccessToken": self.get_access_token(),
+            "msgID": Driver.get_timestamp(),
+            "data": data
+        }
+
         self.send_payload(payload)
 
-    def validate_key(self) -> bool:
-        """
-        Check if the given key is correct.
-
-        Returns
-        -------
-        bool
-        """
-        payload = dumps(
-            {
-                "msgType": MSG_TYPES['WRITE'],
-                "mac": self.get_mac(),
-                "deviceType": self.get_devicetype(),
-                "AccessToken": self.get_access_token(),
-                "msgID": self.get_timestamp(),
-                "data":
-                    {
-                        'operation': STATUS
-                    }
-            }
-        )
-        self.send_payload(payload)
-        data, address = self._sock.recvfrom(1024)
-        message = loads(data.decode('utf-8'))
-        try:
-            if message['actionResult'] == 'AccessToken error':
-                raise ValueError('The key was rejected!')
-        except KeyError:
-            key_log = 'xxxxxxxx-' + self._key[-7:]
-            self.get_logger().info(f"The key {key_log} is valid.")
-            return True
-
-    def send_payload(self, payload: str) -> None:
+    def send_payload(self, payload: dict) -> None:
         """
         Sends a payload as JSON string to the bridge.
 
@@ -587,8 +516,8 @@ class Bridge(_Device):
         else:
             remote_ip = self._bridge_address
         try:
-            self._sock.sendto(payload.encode(), (remote_ip, SEND_PORT))
-            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {payload}.')
+            self._sock.sendto(dumps(payload).encode(), (remote_ip, SEND_PORT))
+            self.get_logger().debug(f'{self._mac}: Send to {remote_ip}:{SEND_PORT}: {dumps(payload)}.')
         except Exception:
             raise
 
@@ -600,7 +529,7 @@ class Bridge(_Device):
         """
         for known_device in self._msg_device_list["data"]:
             if known_device['deviceType'] == RADIO_MOTOR:
-                new_device = Helper.device_factory(
+                new_device = Driver.device_factory(
                     known_device['mac'],
                     known_device['deviceType'],
                     self,
@@ -842,16 +771,14 @@ class RadioMotor(_Actuator):
         else:
             data = {'operation': action}
 
-        payload = dumps(
-            {
-                "msgType": MSG_TYPES['WRITE'],
-                "mac": self.get_mac(),
-                "deviceType": self.get_devicetype(),
-                "AccessToken": self._bridge.get_access_token(),
-                "msgID": self.get_timestamp(),
-                "data": data
-            }
-        )
+        payload = {
+            "msgType": MSG_TYPES['WRITE'],
+            "mac": self.get_mac(),
+            "deviceType": self.get_devicetype(),
+            "AccessToken": self._bridge.get_access_token(),
+            "msgID": Driver.get_timestamp(),
+            "data": data
+        }
         self._bridge.send_payload(payload)
 
     def set_status(self, status: dict) -> None:
@@ -996,11 +923,11 @@ class WiFiReceiver(_Actuator):
         raise NotImplementedError
 
 
-class Helper(object):
-    """Helper class for holding the factories and possible other tools in the future."""
+class Driver(object):
+    """Driver class for holding the factories and other tools."""
 
     # class variables
-    BRIDGE: Bridge = None
+    __BRIDGE: Bridge = None
     __SOCKET: socket = None
     __IP: str = None
 
@@ -1077,21 +1004,39 @@ class Helper(object):
         return '10.0.0.192'
 
     @staticmethod
-    def check_key(key: str, bridge_ip: str) -> bool:
+    def check_key(key: str, token: str, bridge_ip: str) -> bool:
         """
         Check if the given key is valid for the bridge.
 
         Parameters
         ----------
         key : key from Connector+ account
+        token : Token from Bridge
         bridge_ip : IP address of the bridge
 
         Returns
         -------
-
+        True if Key is valid.
         """
-        # TODO
-        return True
+        payload = {
+            "msgType": MSG_TYPES['WRITE'],
+            "mac": "",
+            "deviceType": WIFI_BRIDGE,
+            "AccessToken": Driver.get_access_token(key, token),
+            "msgID": Driver.get_timestamp(),
+            "data":
+                {
+                    'operation': STATUS
+                }
+        }
+        Driver.get_socket().sendto(dumps(payload).encode(), (bridge_ip, SEND_PORT))
+        data, address = Driver.get_socket().recvfrom(1024)
+        message = loads(data.decode('utf-8'))
+        try:
+            if message['actionResult'] == 'AccessToken error':
+                raise ValueError('The key was rejected!')
+        except KeyError:
+            return True
 
     @staticmethod
     def count_devices_on_bridge(bridge_ip: str) -> int:
@@ -1111,17 +1056,25 @@ class Helper(object):
 
     @staticmethod
     def get_socket() -> socket:
-        if not Helper.__SOCKET:
+        if not Driver.__SOCKET:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.bind(('', CALLBACK_PORT))
-                mreq = inet_aton(MULTICAST_GRP) + inet_aton(Helper.get_ip())
+                mreq = inet_aton(MULTICAST_GRP) + inet_aton(Driver.get_ip())
                 sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
                 sock.settimeout(UDP_TIMEOUT)
-                Helper.__SOCKET = sock
+                Driver.__SOCKET = sock
             except Exception:
                 raise
-        return Helper.__SOCKET
+        return Driver.__SOCKET
+
+    @staticmethod
+    def close_socket() -> None:
+        """
+        Gentle closing the socket.
+        """
+        Driver.__SOCKET.close()
+        Driver.__SOCKET = None
 
     @staticmethod
     def get_ip() -> str:
@@ -1132,16 +1085,45 @@ class Helper(object):
         -------
         IP address as string.
         """
-        if not Helper.__IP:
+        if not Driver.__IP:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.connect(("208.67.222.222", 80))
-                Helper.__IP = sock.getsockname()[0]
+                Driver.__IP = sock.getsockname()[0]
                 sock.close()
                 del sock
-            except:
+            except Exception:
                 raise
-        return Helper.__IP
+        return Driver.__IP
+
+    @staticmethod
+    def get_access_token(key: str, token: str) -> str:
+        """
+        Creates the access token from the bridge token and the key via aes ecb.
+
+        Returns
+        -------
+        Returns the access token which is needed for authentication.
+        """
+        cipher_key = bytearray()
+        cipher_key.extend(map(ord, key))
+
+        aes_ecb = _AESElectronicCodeBook(cipher_key)
+        cipher_bytes = aes_ecb.encrypt(token.encode("utf8"))
+        access_token = (''.join('%02x' % b for b in bytearray(cipher_bytes))).upper()
+        return access_token
+
+    @staticmethod
+    def get_timestamp() -> str:
+        """
+        Creates a timestamp as message identifier for the bridge.
+
+        Returns
+        -------
+        Returns a timestamp as string.
+        """
+        from datetime import datetime
+        return datetime.now().strftime("%Y%m%d%H%M%S%f")[0:17]
 
 
 class _AESElectronicCodeBook(object):
@@ -1609,4 +1591,4 @@ class _SiroUDPProtocol(DatagramProtocol):
 
 
 if __name__ == "__main__":
-    print(Helper.get_ip())
+    print(Driver.get_ip())
