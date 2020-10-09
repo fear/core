@@ -54,14 +54,14 @@ class SensorBase(Entity):
         """
         Return information to link this entity with the correct device.
         """
-        return {"identifiers": {(DOMAIN, self._blind.get_mac())}}
+        return {"identifiers": {(DOMAIN, self._blind.mac)}}
 
     @property
     def available(self) -> bool:
         """
         Return True if blind and hub is available.
         """
-        return self._blind.is_online() and self._blind.get_bridge().is_online()
+        return self._blind.is_online() and self._blind.bridge.is_online()
 
     async def async_added_to_hass(self):
         """
@@ -109,7 +109,7 @@ class BatterySensor(SensorBase):
         """
         self._status = self._blind.get_status()
         self._battery = self._get_battery_level()
-        self._name = f"{self._blind.get_mac()}_battery"
+        self._name = f"{self._blind.mac}_battery"
         return self._status
 
     def _get_battery_level(self) -> float:
@@ -117,7 +117,7 @@ class BatterySensor(SensorBase):
         Function for setting the battery level.
         """
         if self._status:
-            self._blind.get_logger().debug(self._status)
+            self._blind.logger.debug(self._status)
             return float(self._status['data']['batteryLevel'])/10
 
     @property
@@ -125,7 +125,7 @@ class BatterySensor(SensorBase):
         """
         Return Unique ID string.
         """
-        return f"{self._blind.get_mac()}_battery"
+        return f"{self._blind.mac}_battery"
 
     @property
     def state(self):
@@ -146,7 +146,7 @@ class BatterySensor(SensorBase):
         """
         Return the name of the sensor.
         """
-        return f"{self._blind.get_mac()}_battery"
+        return f"{self._blind.mac}_battery"
 
 
 class RSSISensor(SensorBase):
@@ -171,7 +171,7 @@ class RSSISensor(SensorBase):
         Called when there are updates.
         """
         self._status = self._blind.get_status()
-        self._name = f"{self._blind.get_mac()}_rssi"
+        self._name = f"{self._blind.mac}_rssi"
         self._rssi = self._get_rssi()
 
     def _get_rssi(self) -> int:

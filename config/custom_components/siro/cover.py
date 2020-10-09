@@ -182,4 +182,4 @@ class SiroCover(CoverEntity):
         self._position = self._blind.position
         self._blind_online = self._blind.is_online()
         self._movement_state = self._blind.get_movement_state()
-        self._bridge_online = self._blind.get_bridge().is_online()
+        self._bridge_online = self._blind.bridge.is_online()

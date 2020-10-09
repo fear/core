@@ -679,7 +679,8 @@ class _Actuator(_Device):
         super(_Actuator, self).__init__(mac, devicetype, logger, loglevel)
         self._bridge = bridge
 
-    def get_bridge(self) -> Bridge:
+    @property
+    def bridge(self) -> Bridge:
         """
         Getter for the bridge the device belongs to.
         Returns
