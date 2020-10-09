@@ -1109,7 +1109,7 @@ class Helper(object):
         return 4
 
     @property
-    def socket(self):
+    def socket(self) -> socket:
         if not Helper.__SOCKET:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
