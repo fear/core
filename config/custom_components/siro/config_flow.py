@@ -20,6 +20,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries, core, exceptions
 from .const import DOMAIN
+from .siro.siro import Driver
 
 _LOGGER = logging.getLogger(__name__)
 DATA_SCHEMA = {
@@ -34,18 +35,21 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     """
     Validate the user input allows us to connect.
     """
+    valid_data = data
 
     if len(data["key"]) != 16:
         raise InvalidKey
 
-    # if not Helper.bridge_factory('30b9217c-6d18-4d').validate_key():
-    #     raise CannotConnect
+    if data["bridge"] == '':
+        try:
+            valid_data["bridge"] = Driver.find_bridge()
+        except UserWarning:
+            raise CannotConnect
 
-    return {
-        "title": data["title"],
-        "key": data["key"],
-        "bridge": data["bridge"]
-    }
+    if not Driver.check_key(data["key"], valid_data["bridge"]):
+        raise InvalidKey
+
+    return valid_data
 
 
 class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -82,11 +86,6 @@ class SiroConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
 class CannotConnect(exceptions.HomeAssistantError):
     """Error to indicate we cannot connect."""
-
-
-class InvalidHost(exceptions.HomeAssistantError):
-    """Error to indicate there is an invalid hostname."""
-
 
 class InvalidKey(exceptions.HomeAssistantError):
     """Error to indicate there is an invalid hostname."""

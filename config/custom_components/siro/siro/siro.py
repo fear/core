@@ -44,7 +44,6 @@ from json import (
     decoder,
     dumps,
 )
-# from const import (
 from .const import (
     CALLBACK_PORT,
     CONFIGFILE_DEVICE_NAMES,
@@ -75,6 +74,7 @@ from socket import (
     SOCK_DGRAM,
     inet_aton,
     socket,
+    timeout,
 )
 from logging import (
     Logger,
@@ -988,7 +988,7 @@ class Driver(object):
             raise NotImplemented('By now there are just the 433Mhz Radio Motors implemented.')
 
     @staticmethod
-    def check_bridge_exist(addr: str = MULTICAST_GRP) -> str:
+    def check_bridge_exist(addr: str = None) -> bool:
         """
         Check is any or a given bridge exist
 
@@ -1000,62 +1000,146 @@ class Driver(object):
         -------
         the IP of the bridge.
         """
-        # TODO
-        return '10.0.0.192'
+        addr = addr if addr else Driver.find_bridge()
+
+        sock = Driver.get_socket()
+        payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
+        sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
+        address = ("", "")
+        try:
+            while addr != address[0]:
+                data, address = sock.recvfrom(1024)
+            return True
+        except timeout:
+            return False
 
     @staticmethod
-    def check_key(key: str, token: str, bridge_ip: str) -> bool:
+    def find_bridge() -> str:
+        """
+        Check is any or a given bridge exist
+
+        Returns
+        -------
+        the IP of the bridge if exist.
+        """
+        sock = Driver.get_socket()
+        payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
+        sock.sendto(dumps(payload).encode(), (MULTICAST_GRP, SEND_PORT))
+        try:
+            data, addr = sock.recvfrom(1024)
+            return addr[0]
+        except timeout:
+            raise UserWarning('No bridge found.')
+
+    @staticmethod
+    def get_bridge_info(addr: str = None) -> dict:
+        """
+
+        Parameters
+        ----------
+        addr : IP address of the bride.
+
+        Returns
+        -------
+
+        """
+        sock = Driver.get_socket()
+        address = ('', '')
+        data = b''
+        addr = addr if addr else Driver.find_bridge()
+
+        payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
+        sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
+        try:
+            while addr != address[0]:
+                data, address = sock.recvfrom(1024)
+        except timeout:
+            raise
+        else:
+            data = loads(data.decode('utf-8'))
+            result = {
+                'mac': data['mac'],
+                'deviceType': data['deviceType'],
+                'token': data['token'],
+                'addr': address[0]
+            }
+            return result
+
+    @staticmethod
+    def check_key(key: str, addr: str = None) -> bool:
         """
         Check if the given key is valid for the bridge.
 
         Parameters
         ----------
         key : key from Connector+ account
-        token : Token from Bridge
-        bridge_ip : IP address of the bridge
+        addr : IP address of the bridge
 
         Returns
         -------
         True if Key is valid.
         """
+        if len(key) != 16:
+            return False
+
+        addr = addr if addr else Driver.find_bridge()
+
+        bridge_info = Driver.get_bridge_info(addr)
         payload = {
             "msgType": MSG_TYPES['WRITE'],
-            "mac": "",
-            "deviceType": WIFI_BRIDGE,
-            "AccessToken": Driver.get_access_token(key, token),
+            "mac": bridge_info['mac'],
+            "deviceType": bridge_info['deviceType'],
+            "AccessToken": Driver.get_access_token(key, bridge_info['token']),
             "msgID": Driver.get_timestamp(),
-            "data":
-                {
-                    'operation': STATUS
-                }
+            "data": {'operation': STATUS}
         }
-        Driver.get_socket().sendto(dumps(payload).encode(), (bridge_ip, SEND_PORT))
+        Driver.get_socket().sendto(dumps(payload).encode(), (bridge_info['addr'], SEND_PORT))
         data, address = Driver.get_socket().recvfrom(1024)
         message = loads(data.decode('utf-8'))
         try:
             if message['actionResult'] == 'AccessToken error':
-                raise ValueError('The key was rejected!')
+                return False
         except KeyError:
             return True
 
     @staticmethod
-    def count_devices_on_bridge(bridge_ip: str) -> int:
+    def count_devices_on_bridge(addr: str = None) -> int:
         """
         Check if the given bridge has existing devices.
 
         Parameters
         ----------
-        bridge_ip : IP address of the Bridge
+        addr : IP address of the Bridge
 
         Returns
         -------
         Number of Devices.
         """
-        # TODO
-        return 4
+
+        addr = addr if addr else Driver.find_bridge()
+        sock = Driver.get_socket()
+        address = ('', '')
+        data = b''
+
+        payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
+        sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
+        try:
+            while addr != address[0]:
+                data, address = sock.recvfrom(1024)
+            data = loads(data.decode('utf-8'))
+            return len(data['data'])-1
+        except timeout:
+            return False
 
     @staticmethod
     def get_socket() -> socket:
+        """
+        Create UDP socket and return.
+
+        Returns
+        -------
+        socket instance.
+        """
         if not Driver.__SOCKET:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
@@ -1590,5 +1674,9 @@ class _SiroUDPProtocol(DatagramProtocol):
         self._bridge.update_devices(message)
 
 
-if __name__ == "__main__":
-    print(Driver.get_ip())
+# if __name__ == "__main__":
+#     print(Driver.find_bridge())
+#     print(Driver.check_bridge_exist())
+#     print(Driver.count_devices_on_bridge())
+#     print(Driver.get_bridge_info())
+#     print(Driver.check_key('30b9217c-6d18-4d'))
