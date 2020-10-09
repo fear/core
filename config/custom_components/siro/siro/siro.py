@@ -91,6 +91,7 @@ class _Device(ABC):
     """
     Abstract class which represents a SIRO device.
     """
+
     def __init__(
             self, mac: str,
             devicetype: str,
@@ -110,7 +111,7 @@ class _Device(ABC):
         loop: Asyncio event loop (optional.
         """
         self._loglevel: int = loglevel
-        self._log: Logger = self._init_log(logger, loglevel)
+        self._log: Logger = Driver.get_logger(loglevel)
         self._mac: str = mac
         self._devicetype: str = devicetype
         self._name: str = self._read_name_from_file()
@@ -121,44 +122,30 @@ class _Device(ABC):
         self._loop: AbstractEventLoop = loop if loop else get_event_loop()
         self._callbacks = set()
 
-    def _init_log(self, logger_: Logger = None, loglevel_: int = None) -> Logger:
-        """
-        Create a Logger if no instance is given
+    @property
+    def last_update(self) -> datetime:
+        return self._last_update
 
-        Parameters
-        ----------
-        logger_ : existing logger if available (optional)
-
-        Returns
-        -------
-        a logging instance
-        """
-        if loglevel_:
-            self._loglevel = loglevel_
-        else:
-            self._loglevel = LOGLEVEL
-
-        if logger_:
-            logger_.setLevel(self._loglevel)
-            return logger_
-        else:
-            logger = getLogger(__name__)
-            logger.setLevel(self._loglevel)
-            file_handler = FileHandler(LOG_FILE)
-            formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-            logger.info(f"loglevel ist set to: {self._loglevel}")
-            return logger
-
-    def _set_last_update(self) -> None:
+    @last_update.setter
+    def last_update(self, timestamp: datetime) -> None:
         """
         Set timestamp for last update.
         """
-        self._last_update = datetime.now()
+        self._last_update = timestamp
         self.logger.debug(f"Set last update for device {self._mac} to: {self._last_update}")
 
-    def _set_last_msg_status(self, msg: dict) -> None:
+    @property
+    def msg_status(self) -> dict:
+        """
+        TODO
+        Returns
+        -------
+
+        """
+        return self._msg_status
+
+    @msg_status.setter
+    def msg_status(self, msg: dict) -> None:
         """
         Save last status message in variable.
 
@@ -169,7 +156,7 @@ class _Device(ABC):
         if msg['mac'] == self._mac:
             self._msg_status = msg
             self._online = True
-            self._set_last_update()
+            self.last_update = datetime.now()
 
     def _read_name_from_file(self, config_file: str = CONFIGFILE_DEVICE_NAMES) -> str:
         """
@@ -284,6 +271,7 @@ class _Device(ABC):
         """
         return self._log
 
+    @property
     def is_online(self) -> bool:
         """
         The online state.
@@ -393,10 +381,10 @@ class Bridge(_Device):
         self._protocol_version = self._msg_device_list['ProtocolVersion']
         self._firmware = self._msg_device_list['fwVersion']
         self._access_token = Driver.get_access_token(key, self._msg_device_list["token"])
-        self._number_of_devices = len(self._msg_device_list['data'])-1
+        self._number_of_devices = len(self._msg_device_list['data']) - 1
         await self.listen(self._loop)
         self.devices = self._msg_device_list['data']
-        self.update_status()
+        self.ask_for_status_update()
 
         self.logger.info(f"Bridge {self._mac} is running.")
 
@@ -478,7 +466,7 @@ class Bridge(_Device):
         status : Dictionary with the new status values.
         """
         state_changed = False
-        self._set_last_msg_status(status)
+        self.msg_status = status
 
         if self._current_state != status['data']['currentState']:
             self._current_state = status['data']['currentState']
@@ -498,7 +486,7 @@ class Bridge(_Device):
         if state_changed:
             self._loop.create_task(self.publish_updates())
 
-    def update_status(self) -> None:
+    def ask_for_status_update(self) -> None:
         """
         Ask the bridge for a status update.
         """
@@ -664,6 +652,7 @@ class _Actuator(_Device, ABC):
     """
     Class that represents a all actuators which could be connected to a Bridge.
     """
+
     def __init__(self, mac: str, devicetype: str, logger: Logger, loglevel: int, bridge: Bridge):
         """
 
@@ -693,6 +682,7 @@ class RadioMotor(_Actuator):
     """
     Class that represents a RadioMotor.
     """
+
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
         """
         Constructor of the RadioMotor device.
@@ -716,13 +706,15 @@ class RadioMotor(_Actuator):
         self._last_action = ''
         self._movement_state = ''
         self._target_position = -1
-        self.update_status()
+        self.ask_for_status_update()
         self.logger.info(f"Init for device {self._mac} is done.")
 
-    def get_movement_state(self):
+    @property
+    def movement_state(self):
         return self._movement_state
 
-    def _set_movement_state(self, target_position: int):
+    @movement_state.setter
+    def movement_state(self, target_position: int):
         """
         Setter for movement_state
 
@@ -732,20 +724,20 @@ class RadioMotor(_Actuator):
         """
         state_changed = False
 
-        if target_position > self._current_position:
+        if target_position > self.position:
             if self._movement_state != CURRENT_STATE['State']['CLOSING']:
                 self._movement_state = CURRENT_STATE['State']['CLOSING']
                 state_changed = True
-        elif target_position < self._current_position and target_position != -1:
+        elif target_position < self.position and target_position != -1:
             if self._movement_state != CURRENT_STATE['State']['OPENING']:
                 self._movement_state = CURRENT_STATE['State']['OPENING']
                 state_changed = True
-        elif target_position == self._current_position or target_position == -1:
-            if self._current_position == STATE_DOWN:
+        elif target_position == self.position or target_position == -1:
+            if self.position == STATE_DOWN:
                 if self._movement_state != CURRENT_STATE['State']['CLOSED']:
                     self._movement_state = CURRENT_STATE['State']['CLOSED']
                     state_changed = True
-            elif self._current_position == STATE_UP:
+            elif self.position == STATE_UP:
                 if self._movement_state != CURRENT_STATE['State']['OPEN']:
                     self._movement_state = CURRENT_STATE['State']['OPEN']
                     state_changed = True
@@ -771,15 +763,15 @@ class RadioMotor(_Actuator):
 
         if action == DOWN:
             self._target_position = 100
-            self._set_movement_state(self._target_position)
+            self.movement_state = self._target_position
         if action == UP:
             self._target_position = 0
-            self._set_movement_state(self._target_position)
+            self.movement_state = self._target_position
         if action == STOP:
             self._target_position = -1
         if action == STATUS:
-            self._target_position = self._current_position
-            self._set_movement_state(self._target_position)
+            self._target_position = self.position
+            self.movement_state = self._target_position
         if action == POSITION:
             self._target_position = position
             data = {'targetPosition': position}
@@ -812,7 +804,7 @@ class RadioMotor(_Actuator):
         status : Dictionary with new values.
         """
         state_changed = False
-        self._set_last_msg_status(status)
+        self.msg_status = status
         try:
             if self._type != status['data']['type']:
                 self._type = status['data']['type']
@@ -822,12 +814,12 @@ class RadioMotor(_Actuator):
                 self._operation = status['data']['operation']
                 self.logger.debug(f"Device {self._mac} got update for operation: {self._operation}.")
                 state_changed = True
-            if self._current_position != status['data']['currentPosition']:
-                self._current_position = status['data']['currentPosition']
+            if self.position != status['data']['currentPosition']:
+                self.position = status['data']['currentPosition']
                 if status['msgType'] == MSG_TYPES['REPORT']:
-                    self._target_position = self._current_position
-                    self._set_movement_state(self._target_position)
-                self.logger.info(f"Device {self._mac} got update for currentPosition: {self._current_position}.")
+                    self._target_position = self.position
+                    self.movement_state = self._target_position
+                self.logger.info(f"Device {self._mac} got update for currentPosition: {self.position}.")
                 state_changed = True
             if self._current_angle != status['data']['currentAngle']:
                 self._current_angle = status['data']['currentAngle']
@@ -863,7 +855,7 @@ class RadioMotor(_Actuator):
         except Exception:
             raise
 
-    def update_status(self) -> None:
+    def ask_for_status_update(self) -> None:
         """
         Ask bridge for an status update of the roller.
         """
@@ -919,6 +911,13 @@ class RadioMotor(_Actuator):
         """
         return self._current_position
 
+    @position.setter
+    def position(self, value: int):
+        """
+        Setter for the actual position of the roller.
+        """
+        self._current_position = value
+
 
 class WiFiCurtain(_Actuator):
 
@@ -957,7 +956,8 @@ class Driver(object):
     # class variables
     __BRIDGE: Bridge = None
     __SOCKET: socket = None
-    __IP: str = None
+    __LOGGER: Logger = None
+    __IPADDR: str = None
 
     @staticmethod
     async def bridge_factory(
@@ -1131,6 +1131,24 @@ class Driver(object):
             return True
 
     @staticmethod
+    def get_logger(loglevel_: int = None, write_log_to_file: bool = False) -> Logger:
+        """
+        Create a Logger
+        """
+        if not Driver.__LOGGER:
+            loglevel = loglevel_ if loglevel_ else LOGLEVEL
+            logger = getLogger(__name__)
+            logger.setLevel(loglevel)
+            if write_log_to_file:
+                file_handler = FileHandler(LOG_FILE)
+                formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
+                file_handler.setFormatter(formatter)
+                logger.addHandler(file_handler)
+            logger.info(f"loglevel ist set to: {loglevel}")
+            Driver.__LOGGER = logger
+        return Driver.__LOGGER
+
+    @staticmethod
     def count_devices_on_bridge(addr: str = None) -> int:
         """
         Check if the given bridge has existing devices.
@@ -1155,7 +1173,7 @@ class Driver(object):
             while addr != address[0]:
                 data, address = sock.recvfrom(1024)
             data = loads(data.decode('utf-8'))
-            return len(data['data'])-1
+            return len(data['data']) - 1
         except timeout:
             return False
 
@@ -1197,16 +1215,16 @@ class Driver(object):
         -------
         IP address as string.
         """
-        if not Driver.__IP:
+        if not Driver.__IPADDR:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.connect(("208.67.222.222", 80))
-                Driver.__IP = sock.getsockname()[0]
+                Driver.__IPADDR = sock.getsockname()[0]
                 sock.close()
                 del sock
             except Exception:
                 raise
-        return Driver.__IP
+        return Driver.__IPADDR
 
     @staticmethod
     def get_access_token(key: str, token: str) -> str:

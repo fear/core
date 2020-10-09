@@ -61,7 +61,7 @@ class SensorBase(Entity):
         """
         Return True if blind and hub is available.
         """
-        return self._blind.is_online() and self._blind.bridge.is_online()
+        return self._blind.is_online and self._blind.bridge.is_online
 
     async def async_added_to_hass(self):
         """
