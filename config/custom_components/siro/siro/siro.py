@@ -353,7 +353,7 @@ class Bridge(_Device):
         super(Bridge, self).__init__('', WIFI_BRIDGE, driver, logger, loglevel, loop)
         self._access_token: str = access_token
         self._bridge_address: str = bridge_address
-        self._callback_address: str = callback_address if callback_address else self._driver.get_ip()
+        self._callback_address: str = callback_address if callback_address else self._driver.ip
         self._sock: socket = ''
         self._protocol_version = ''
         self._firmware: str = ''
@@ -374,7 +374,7 @@ class Bridge(_Device):
         """
         Starting the Bridge.
         """
-        self._sock: socket = self._driver.get_socket()
+        self._sock: socket = self._driver.socket
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
@@ -1053,7 +1053,7 @@ class Driver(object):
         """
         self._transport, self._listener = await loop.create_datagram_endpoint(
             protocol_factory=_SiroUDPListener,
-            sock=self.get_socket(),
+            sock=self.socket,
         )
         self._listener.register_callback(self._bridge.update_devices)
 
@@ -1082,7 +1082,7 @@ class Driver(object):
         """
         bridge_info = self.get_bridge_info(addr)
         access_token = Driver.get_access_token(key, bridge_info['token'])
-        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.get_ip())
+        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
         await new_bridge.run()
         return new_bridge
 
@@ -1129,7 +1129,7 @@ class Driver(object):
         """
         addr = addr if addr else self.find_bridge()
 
-        sock = self.get_socket()
+        sock = self.socket
         payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
         sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
         address = ("", "")
@@ -1148,7 +1148,7 @@ class Driver(object):
         -------
         the IP of the bridge if exist.
         """
-        sock = self.get_socket()
+        sock = self.socket
         payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
         sock.sendto(dumps(payload).encode(), (MULTICAST_GRP, SEND_PORT))
         try:
@@ -1168,7 +1168,7 @@ class Driver(object):
         -------
 
         """
-        sock = self.get_socket()
+        sock = self.socket
         address = ('', '')
         data = b''
         addr = addr if addr else self.find_bridge()
@@ -1217,8 +1217,8 @@ class Driver(object):
             "msgID": Driver.get_timestamp(),
             "data": {'operation': STATUS}
         }
-        self.get_socket().sendto(dumps(payload).encode(), (bridge_info['addr'], SEND_PORT))
-        data, address = self.get_socket().recvfrom(1024)
+        self.socket.sendto(dumps(payload).encode(), (bridge_info['addr'], SEND_PORT))
+        data, address = self.socket.recvfrom(1024)
         message = loads(data.decode('utf-8'))
         try:
             if message['actionResult'] == 'AccessToken error':
@@ -1240,7 +1240,7 @@ class Driver(object):
         """
 
         addr = addr if addr else self.find_bridge()
-        sock = self.get_socket()
+        sock = self.socket
         address = ('', '')
         data = b''
 
@@ -1254,7 +1254,8 @@ class Driver(object):
         except timeout:
             return False
 
-    def get_socket(self) -> socket:
+    @property
+    def socket(self) -> socket:
         """
         Create UDP socket and return.
 
@@ -1266,7 +1267,7 @@ class Driver(object):
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.bind(('', CALLBACK_PORT))
-                mreq = inet_aton(MULTICAST_GRP) + inet_aton(self.get_ip())
+                mreq = inet_aton(MULTICAST_GRP) + inet_aton(self.ip)
                 sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
                 sock.settimeout(UDP_TIMEOUT)
                 self._socket = sock
@@ -1281,7 +1282,8 @@ class Driver(object):
         self._socket.close()
         self._socket = None
 
-    def get_ip(self) -> str:
+    @property
+    def ip(self) -> str:
         """
         Get the local ip address from the machine.
 
