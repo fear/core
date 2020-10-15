@@ -398,10 +398,9 @@ class Bridge(_Device):
         loop : The actual event loop.
         """
         self._transport, self._protocol = await loop.create_datagram_endpoint(
-            protocol_factory=_SiroUDPProtocol,
+            protocol_factory=_SiroUDPListener,
             sock=self._sock,
         )
-        self._protocol.set_bridge(self)
         self._protocol.register_callback(self.update_devices)
 
     @property
@@ -1668,7 +1667,7 @@ class _AESElectronicCodeBook(object):
         return self._bytes_to_string(result)
 
 
-class _SiroUDPProtocol(DatagramProtocol):
+class _SiroUDPListener(DatagramProtocol):
     def __init__(self):
         """
         Constructor for the protocol class.
