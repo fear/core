@@ -21,8 +21,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from siro.siro import Bridge, Driver, RadioMotor
-# from .siro.siro import Bridge, Driver, RadioMotor
+from siro.siro import Driver
 
 PLATFORMS = ["cover", "sensor"]
 
