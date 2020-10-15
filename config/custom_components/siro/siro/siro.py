@@ -1231,18 +1231,16 @@ class Driver(object):
         """
         Create a Logger
         """
-        if not Driver.__LOGGER:
-            loglevel = loglevel_ if loglevel_ else LOGLEVEL
-            logger = getLogger(__name__)
-            logger.setLevel(loglevel)
-            if write_log_to_file:
-                file_handler = FileHandler(LOG_FILE)
-                formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-                file_handler.setFormatter(formatter)
-                logger.addHandler(file_handler)
-            logger.info(f"loglevel ist set to: {loglevel}")
-            Driver.__LOGGER = logger
-        return Driver.__LOGGER
+        loglevel = loglevel_ if loglevel_ else LOGLEVEL
+        logger = getLogger(__name__)
+        logger.setLevel(loglevel)
+        if write_log_to_file:
+            file_handler = FileHandler(LOG_FILE)
+            formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        logger.info(f"loglevel ist set to: {loglevel}")
+        return logger
 
     def count_devices_on_bridge(self, addr: str = None) -> int:
         """
