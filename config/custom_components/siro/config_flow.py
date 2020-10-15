@@ -7,7 +7,7 @@ __copyright__ = "Copyright (c) 2020 Felix Arnold"
 __credits__ = ["@sillyfrog", "Paulus Schoutsen (@balloob)",
                "everybody working on home assistant", "everybody helping others"]
 __license__ = "Apache-2.0"
-__version__ = "0.3"
+__version__ = "0.4"
 __maintainer__ = "Felix Arnold (@fear)"
 __email__ = "hello@felix-arnold.dev"
 __status__ = "Beta"
