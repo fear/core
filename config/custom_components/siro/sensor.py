@@ -108,11 +108,12 @@ class BatterySensor(SensorBase):
         Called when there are updates.
         """
         self._status = self._blind.status
-        self._battery = self._get_battery_level()
-        self._name = f"{self._blind.mac}_battery"
+        self._battery = self.battery_level
+        self._name = self.name
         return self._status
 
-    def _get_battery_level(self) -> float:
+    @property
+    def battery_level(self) -> float:
         """
         Function for setting the battery level.
         """
@@ -172,9 +173,10 @@ class RSSISensor(SensorBase):
         """
         self._status = self._blind.status
         self._name = f"{self._blind.mac}_rssi"
-        self._rssi = self._get_rssi()
+        self._rssi = self.rssi
 
-    def _get_rssi(self) -> int:
+    @property
+    def rssi(self) -> int:
         """
         Reading the RSSI state.
         """

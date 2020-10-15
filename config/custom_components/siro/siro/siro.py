@@ -397,10 +397,11 @@ class Bridge(_Device):
         loop : The actual event loop.
         """
         self._transport, self._protocol = await loop.create_datagram_endpoint(
-            _SiroUDPProtocol,
+            protocol_factory=_SiroUDPProtocol,
             sock=self._sock,
         )
         self._protocol.set_bridge(self)
+        self._protocol.register_callback(self.update_devices)
 
     @property
     def callback_address(self) -> str:
@@ -1673,6 +1674,7 @@ class _SiroUDPProtocol(DatagramProtocol):
         """
         self._transport = None
         self._bridge = None
+        self._callbacks = set()
 
     def set_bridge(self, bridge: Bridge) -> None:
         """
@@ -1710,5 +1712,17 @@ class _SiroUDPProtocol(DatagramProtocol):
         data : Message as bytes
         addr : Address of the sending bridge
         """
-        message = loads(data.decode('utf-8'))
-        self._bridge.update_devices(message)
+        for callback in self._callbacks:
+            callback(loads(data.decode('utf-8')))
+
+    def register_callback(self, callback):
+        """
+        Register callback, called when Roller changes state.
+        """
+        self._callbacks.add(callback)
+
+    def remove_callback(self, callback):
+        """
+        Remove previously registered callback.
+        """
+        self._callbacks.discard(callback)

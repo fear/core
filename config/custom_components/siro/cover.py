@@ -100,7 +100,7 @@ class SiroCover(CoverEntity):
         return {
             "identifiers": {(DOMAIN, self._blind.mac)},
             # If desired, the name for the device could be different to the entity
-            "name": f"{self._blind.mac}_cover",
+            "name": self.name,
             "sw_version": self._blind.firmware,
             "model": DEVICE_TYPES[self._blind.devicetype],
             "manufacturer": "SIRO",
@@ -111,7 +111,7 @@ class SiroCover(CoverEntity):
         """
         Return the name of the roller.
         """
-        return f"{self._blind.mac}_cover"
+        return self.unique_id
 
     @property
     def available(self) -> bool:
