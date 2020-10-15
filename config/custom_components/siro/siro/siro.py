@@ -137,10 +137,11 @@ class _Device(ABC):
     @property
     def msg_status(self) -> dict:
         """
-        TODO
+        Returns the last status message.
+
         Returns
         -------
-
+        the dictionary with the last messages.
         """
         return self._msg_status
 
@@ -378,7 +379,6 @@ class Bridge(_Device):
         await self.listen(self._loop)
         self.devices = self._msg_device_list['data']
         self.ask_for_status_update()
-
         self.logger.info(f"Bridge {self._mac} is running.")
 
     # noinspection PyMethodMayBeStatic
@@ -388,6 +388,7 @@ class Bridge(_Device):
         """
         Driver.close_socket()
 
+    # noinspection PyUnresolvedReferences
     async def listen(self, loop: AbstractEventLoop):
         """
         Function for receiving all messages from the bridge.
