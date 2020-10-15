@@ -40,13 +40,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     Set up SIRO from a config entry.
     """
-
-
-    hass.data[DOMAIN][entry.entry_id] = await Driver.bridge_factory(
+    driver = Driver(Driver.get_socket())
+    bridge = await driver.bridge_factory(
         key=entry.data['key'],
         addr=entry.data['bridge'],
         loglevel=log.INFO
     )
+    hass.data[DOMAIN][entry.entry_id] = bridge
     for component in PLATFORMS:
         hass.async_create_task(
             hass.config_entries.async_forward_entry_setup(entry, component)

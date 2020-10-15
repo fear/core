@@ -93,8 +93,10 @@ class _Device(ABC):
     """
 
     def __init__(
-            self, mac: str,
+            self,
+            mac: str,
             devicetype: str,
+            driver: Driver,
             logger: Logger = None,
             loglevel: int = None,
             loop: AbstractEventLoop = None
@@ -111,7 +113,8 @@ class _Device(ABC):
         loop: Asyncio event loop (optional.
         """
         self._loglevel: int = loglevel
-        self._log: Logger = logger if logger else Driver.get_logger(loglevel)
+        self._driver: Driver = driver
+        self._log: Logger = logger if logger else self._driver.get_logger(loglevel)
         self._mac: str = mac
         self._devicetype: str = devicetype
         self._name: str = self._read_name_from_file()
@@ -331,6 +334,7 @@ class Bridge(_Device):
     def __init__(
             self,
             access_token: str,
+            driver: Driver,
             logger: Logger = None,
             bridge_address: str = '',
             loglevel: int = None,
@@ -346,7 +350,7 @@ class Bridge(_Device):
         bridge_address : IP address of the bridge (optional).
         loglevel : Loglevel for the logger.
         """
-        super(Bridge, self).__init__('', WIFI_BRIDGE, logger, loglevel, loop)
+        super(Bridge, self).__init__('', WIFI_BRIDGE, driver, logger, loglevel, loop)
         self._access_token: str = access_token
         self._bridge_address: str = bridge_address
         self._callback_address: str = callback_address if callback_address else Driver.get_ip()
@@ -370,7 +374,7 @@ class Bridge(_Device):
         """
         Starting the Bridge.
         """
-        self._sock: socket = Driver.get_socket()
+        self._sock: socket = self._driver.get_socket()
         self._msg_device_list, self._bridge_address = self._init_device_list()
         self._mac = self._msg_device_list["mac"]
         self._protocol_version = self._msg_device_list['ProtocolVersion']
@@ -386,7 +390,7 @@ class Bridge(_Device):
         """
         Close socket for gentle shutdown.
         """
-        Driver.close_socket()
+        self._driver.close_socket()
 
     # noinspection PyUnresolvedReferences
     async def listen(self, loop: AbstractEventLoop):
@@ -428,7 +432,7 @@ class Bridge(_Device):
         if not waiting_for_response:
             payload = {
                 'msgType': MSG_TYPES['LIST'],
-                'msgID': Driver.get_timestamp()
+                'msgID': self._driver.get_timestamp()
             }
 
             self.send_payload(payload)
@@ -491,7 +495,7 @@ class Bridge(_Device):
             "mac": self.mac,
             "deviceType": self.devicetype,
             "AccessToken": self.access_token,
-            "msgID": Driver.get_timestamp(),
+            "msgID": self._driver.get_timestamp(),
             "data": data
         }
 
@@ -944,16 +948,117 @@ class WiFiReceiver(_Actuator):
         return self._msg_status
 
 
+class _SiroUDPListener(DatagramProtocol):
+    def __init__(self):
+        """
+        Constructor for the protocol class.
+        """
+        self._transport = None
+        self._bridge = None
+        self._callbacks = set()
+
+    def set_bridge(self, bridge: Bridge) -> None:
+        """
+        Setter for the bridge object.
+
+        Parameters
+        ----------
+        bridge : Reference to the bridge.
+        """
+        self._bridge = bridge
+
+    def connection_made(self, transport) -> None:
+        """
+        Implementation of the connection made method.
+
+        Parameters
+        ----------
+        transport : Transport object for async communication with the socket.
+        """
+        self._transport = transport
+
+    def connection_lost(self, exc) -> None:
+        """
+        Implementation of the connection lost method.
+        """
+        pass
+
+    def datagram_received(self, data, addr) -> None:
+        """
+        Method which is called when a new datagram is received.
+        It calls the bridge to update the corresponding devices.
+
+        Parameters
+        ----------
+        data : Message as bytes
+        addr : Address of the sending bridge
+        """
+        for callback in self._callbacks:
+            callback(loads(data.decode('utf-8')))
+
+    def register_callback(self, callback):
+        """
+        Register callback, called when Roller changes state.
+        """
+        self._callbacks.add(callback)
+
+    def remove_callback(self, callback):
+        """
+        Remove previously registered callback.
+        """
+        self._callbacks.discard(callback)
+
+
 class Driver(object):
     """Driver class for holding the factories and other tools."""
 
-    __BRIDGE: Bridge = None
-    __SOCKET: socket = None
-    __LOGGER: Logger = None
-    __IPADDR: str = None
+    # noinspection PyTypeChecker
+    def __init__(self, socket_: socket):
+        self._bridge: Bridge = None
+        self._socket: socket = socket_
+        self._logger: Logger = self.get_logger()
+        self._ipaddr: str = self.get_ip()
+        self._transport = None
+        self._listener: _SiroUDPListener = None
 
-    @staticmethod
+    @property
+    def driver(self) -> Bridge:
+        """
+        Better for driver object
+
+        Returns
+        -------
+        Driver
+        """
+        return self.driver
+
+    @driver.setter
+    def driver(self, bridge: Bridge) -> None:
+        """
+        Setter for Driver
+
+        Parameters
+        ----------
+        bridge : Bridge Object
+        """
+        self._bridge = bridge
+
+    async def start_udp_listener(self, loop: AbstractEventLoop):
+        """
+        Function for receiving all messages from the bridge.
+
+        Parameters
+        ----------
+        loop : The actual event loop.
+        """
+        self._transport, self._listener = await loop.create_datagram_endpoint(
+            protocol_factory=_SiroUDPListener,
+            sock=self.get_socket(),
+        )
+        self._listener.register_callback(self._bridge.update_devices)
+
     async def bridge_factory(
+            self,
             key: str,
             log: Logger = None,
             loop=None,
@@ -977,7 +1082,7 @@ class Driver(object):
         """
         bridge_info = Driver.get_bridge_info(addr)
         access_token = Driver.get_access_token(key, bridge_info['token'])
-        new_bridge = Bridge(access_token, log, bridge_info['addr'], loglevel, loop, Driver.get_ip())
+        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, Driver.get_ip())
         await new_bridge.run()
         return new_bridge
 
@@ -1665,64 +1770,3 @@ class _AESElectronicCodeBook(object):
             result.append((self.S[t[(i + s3) % 4] & 0xFF] ^ tt) & 0xFF)
 
         return self._bytes_to_string(result)
-
-
-class _SiroUDPListener(DatagramProtocol):
-    def __init__(self):
-        """
-        Constructor for the protocol class.
-        """
-        self._transport = None
-        self._bridge = None
-        self._callbacks = set()
-
-    def set_bridge(self, bridge: Bridge) -> None:
-        """
-        Setter for the bridge object.
-
-        Parameters
-        ----------
-        bridge : Reference to the bridge.
-        """
-        self._bridge = bridge
-
-    def connection_made(self, transport) -> None:
-        """
-        Implementation of the connection made method.
-
-        Parameters
-        ----------
-        transport : Transport object for async communication with the socket.
-        """
-        self._transport = transport
-
-    def connection_lost(self, exc) -> None:
-        """
-        Implementation of the connection lost method.
-        """
-        pass
-
-    def datagram_received(self, data, addr) -> None:
-        """
-        Method which is called when a new datagram is received.
-        It calls the bridge to update the corresponding devices.
-
-        Parameters
-        ----------
-        data : Message as bytes
-        addr : Address of the sending bridge
-        """
-        for callback in self._callbacks:
-            callback(loads(data.decode('utf-8')))
-
-    def register_callback(self, callback):
-        """
-        Register callback, called when Roller changes state.
-        """
-        self._callbacks.add(callback)
-
-    def remove_callback(self, callback):
-        """
-        Remove previously registered callback.
-        """
-        self._callbacks.discard(callback)
