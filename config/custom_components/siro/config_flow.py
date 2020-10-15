@@ -37,17 +37,18 @@ async def validate_input(hass: core.HomeAssistant, data: dict):
     Validate the user input allows us to connect.
     """
     valid_data = data
+    driver = Driver()
 
     if len(data["key"]) != 16:
         raise InvalidKey
 
     if data["bridge"] == '':
         try:
-            valid_data["bridge"] = Driver.find_bridge()
+            valid_data["bridge"] = driver.find_bridge()
         except UserWarning:
             raise CannotConnect
 
-    if not Driver.check_key(data["key"], valid_data["bridge"]):
+    if not driver.check_key(data["key"], valid_data["bridge"]):
         raise InvalidKey
 
     return valid_data
