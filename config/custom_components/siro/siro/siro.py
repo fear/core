@@ -1305,8 +1305,7 @@ class Driver(object):
         Driver.__SOCKET.close()
         Driver.__SOCKET = None
 
-    @staticmethod
-    def get_ip() -> str:
+    def get_ip(self) -> str:
         """
         Get the local ip address from the machine.
 
@@ -1314,16 +1313,16 @@ class Driver(object):
         -------
         IP address as string.
         """
-        if not Driver.__IPADDR:
+        if not self._ipaddr:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.connect(("208.67.222.222", 80))
-                Driver.__IPADDR = sock.getsockname()[0]
+                self._ipaddr = sock.getsockname()[0]
                 sock.close()
                 del sock
             except Exception:
                 raise
-        return Driver.__IPADDR
+        return self._ipaddr
 
     @staticmethod
     def get_access_token(key: str, token: str) -> str:
