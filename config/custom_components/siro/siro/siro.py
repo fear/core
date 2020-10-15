@@ -334,7 +334,7 @@ class Bridge(_Device):
     def __init__(
             self,
             access_token: str,
-            driver: Driver,
+            driver: any,
             logger: Logger = None,
             bridge_address: str = '',
             loglevel: int = None,
