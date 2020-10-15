@@ -36,7 +36,7 @@ async def async_setup_entry(hass, config_entry, async_add_devices):
         async_add_devices(new_devices)
 
 
-class SensorBase(Entity):
+class _SensorBase(Entity):
     """
     Base representation of a Hello World Sensor.
     """
@@ -79,14 +79,14 @@ class SensorBase(Entity):
         """
         Entity being removed from hass.
         """
-        self._blind.register_callback(self._callback)
+        self._blind.remove_callback(self._callback)
 
     def update(self) -> None:
         print('update...')
         self._status = self._blind.status
 
 
-class BatterySensor(SensorBase):
+class BatterySensor(_SensorBase):
     """
     Representation of a Sensor.
     """
@@ -150,7 +150,7 @@ class BatterySensor(SensorBase):
         return f"{self._blind.mac}_battery"
 
 
-class RSSISensor(SensorBase):
+class RSSISensor(_SensorBase):
     """
     Representation of a Sensor.
     """

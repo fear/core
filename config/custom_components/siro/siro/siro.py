@@ -1226,22 +1226,6 @@ class Driver(object):
         except KeyError:
             return True
 
-    @staticmethod
-    def get_logger(loglevel_: int = None, write_log_to_file: bool = False) -> Logger:
-        """
-        Create a Logger
-        """
-        loglevel = loglevel_ if loglevel_ else LOGLEVEL
-        logger = getLogger(__name__)
-        logger.setLevel(loglevel)
-        if write_log_to_file:
-            file_handler = FileHandler(LOG_FILE)
-            formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-        logger.info(f"loglevel ist set to: {loglevel}")
-        return logger
-
     def count_devices_on_bridge(self, addr: str = None) -> int:
         """
         Check if the given bridge has existing devices.
@@ -1290,13 +1274,12 @@ class Driver(object):
                 raise
         return self._socket
 
-    @staticmethod
-    def close_socket() -> None:
+    def close_socket(self) -> None:
         """
         Gentle closing the socket.
         """
-        Driver.__SOCKET.close()
-        Driver.__SOCKET = None
+        self._socket.close()
+        self._socket = None
 
     def get_ip(self) -> str:
         """
@@ -1345,6 +1328,22 @@ class Driver(object):
         """
         from datetime import datetime
         return datetime.now().strftime("%Y%m%d%H%M%S%f")[0:17]
+
+    @staticmethod
+    def get_logger(loglevel_: int = None, write_log_to_file: bool = False) -> Logger:
+        """
+        Create a Logger
+        """
+        loglevel = loglevel_ if loglevel_ else LOGLEVEL
+        logger = getLogger(__name__)
+        logger.setLevel(loglevel)
+        if write_log_to_file:
+            file_handler = FileHandler(LOG_FILE)
+            formatter = Formatter('%(asctime)s : %(levelname)s : %(name)s : %(message)s')
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        logger.info(f"loglevel ist set to: {loglevel}")
+        return logger
 
 
 class _AESElectronicCodeBook(object):

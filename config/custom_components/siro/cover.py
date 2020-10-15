@@ -83,7 +83,7 @@ class SiroCover(CoverEntity):
         """
         Entity being removed from hass.
         """
-        self._blind.register_callback(self._callback)
+        self._blind.remove_callback(self._callback)
 
     @property
     def unique_id(self):
