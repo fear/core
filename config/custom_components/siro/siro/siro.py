@@ -353,7 +353,7 @@ class Bridge(_Device):
         super(Bridge, self).__init__('', WIFI_BRIDGE, driver, logger, loglevel, loop)
         self._access_token: str = access_token
         self._bridge_address: str = bridge_address
-        self._callback_address: str = callback_address if callback_address else Driver.get_ip()
+        self._callback_address: str = callback_address if callback_address else self._driver.get_ip()
         self._sock: socket = ''
         self._protocol_version = ''
         self._firmware: str = ''
@@ -651,7 +651,7 @@ class _Actuator(_Device, ABC):
     Class that represents a all actuators which could be connected to a Bridge.
     """
 
-    def __init__(self, mac: str, devicetype: str, logger: Logger, loglevel: int, bridge: Bridge):
+    def __init__(self, mac: str, devicetype: str, driver, logger: Logger, loglevel: int, bridge: Bridge):
         """
 
         Parameters
@@ -662,7 +662,7 @@ class _Actuator(_Device, ABC):
         logger : Reference to the Logging instance (optional).
         loglevel : Loglevel for the logger.
         """
-        super(_Actuator, self).__init__(mac, devicetype, logger, loglevel)
+        super(_Actuator, self).__init__(mac, devicetype, driver, logger, loglevel)
         self._bridge = bridge
 
     @property
@@ -692,7 +692,7 @@ class RadioMotor(_Actuator):
         logger : Reference to the Logging instance (optional).
         loglevel : Loglevel for the logger.
         """
-        super(RadioMotor, self).__init__(mac, RADIO_MOTOR, logger, loglevel, bridge)
+        super(RadioMotor, self).__init__(mac, RADIO_MOTOR, bridge._driver, logger, loglevel, bridge)
         self._type = ''
         self._operation = ''
         self._current_position = 0
@@ -920,7 +920,7 @@ class RadioMotor(_Actuator):
 class WiFiCurtain(_Actuator):
 
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
-        super(WiFiCurtain, self).__init__(mac, WIFI_CURTAIN, logger, loglevel, bridge)
+        super(WiFiCurtain, self).__init__(mac, WIFI_CURTAIN, bridge._driver, logger, loglevel, bridge)
         raise NotImplementedError
 
     @property
@@ -930,7 +930,7 @@ class WiFiCurtain(_Actuator):
 
 class WiFiMotor(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
-        super(WiFiMotor, self).__init__(mac, WIFI_MOTOR, logger, loglevel, bridge)
+        super(WiFiMotor, self).__init__(mac, WIFI_MOTOR, bridge._driver, logger, loglevel, bridge)
         raise NotImplementedError
 
     @property
@@ -940,7 +940,7 @@ class WiFiMotor(_Actuator):
 
 class WiFiReceiver(_Actuator):
     def __init__(self, mac: str, bridge: Bridge, logger: Logger = None, loglevel: int = None) -> None:
-        super(WiFiReceiver, self).__init__(mac, WIFI_RECEIVER, logger, loglevel, bridge)
+        super(WiFiReceiver, self).__init__(mac, WIFI_RECEIVER, bridge._driver, logger, loglevel, bridge)
         raise NotImplementedError
 
     @property
@@ -1080,9 +1080,9 @@ class Driver(object):
         -------
         reference to an bridge object.
         """
-        bridge_info = Driver.get_bridge_info(addr)
+        bridge_info = self.get_bridge_info(addr)
         access_token = Driver.get_access_token(key, bridge_info['token'])
-        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, Driver.get_ip())
+        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.get_ip())
         await new_bridge.run()
         return new_bridge
 
@@ -1115,8 +1115,7 @@ class Driver(object):
         else:
             raise NotImplementedError('By now there are just the 433Mhz Radio Motors implemented.')
 
-    @staticmethod
-    def check_bridge_exist(addr: str = None) -> bool:
+    def check_bridge_exist(self, addr: str = None) -> bool:
         """
         Check is any or a given bridge exist
 
@@ -1128,9 +1127,9 @@ class Driver(object):
         -------
         the IP of the bridge.
         """
-        addr = addr if addr else Driver.find_bridge()
+        addr = addr if addr else self.find_bridge()
 
-        sock = Driver.get_socket()
+        sock = self.get_socket()
         payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
         sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
         address = ("", "")
@@ -1141,8 +1140,7 @@ class Driver(object):
         except timeout:
             return False
 
-    @staticmethod
-    def find_bridge() -> str:
+    def find_bridge(self) -> str:
         """
         Check is any or a given bridge exist
 
@@ -1150,7 +1148,7 @@ class Driver(object):
         -------
         the IP of the bridge if exist.
         """
-        sock = Driver.get_socket()
+        sock = self.get_socket()
         payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
         sock.sendto(dumps(payload).encode(), (MULTICAST_GRP, SEND_PORT))
         try:
@@ -1159,8 +1157,7 @@ class Driver(object):
         except timeout:
             raise UserWarning('No bridge found.')
 
-    @staticmethod
-    def get_bridge_info(addr: str = None) -> dict:
+    def get_bridge_info(self, addr: str = None) -> dict:
         """
 
         Parameters
@@ -1171,10 +1168,10 @@ class Driver(object):
         -------
 
         """
-        sock = Driver.get_socket()
+        sock = self.get_socket()
         address = ('', '')
         data = b''
-        addr = addr if addr else Driver.find_bridge()
+        addr = addr if addr else self.find_bridge()
 
         payload = {'msgType': MSG_TYPES['LIST'], 'msgID': Driver.get_timestamp()}
         sock.sendto(dumps(payload).encode(), (addr, SEND_PORT))
@@ -1193,8 +1190,7 @@ class Driver(object):
             }
             return result
 
-    @staticmethod
-    def check_key(key: str, addr: str = None) -> bool:
+    def check_key(self, key: str, addr: str = None) -> bool:
         """
         Check if the given key is valid for the bridge.
 
@@ -1210,9 +1206,9 @@ class Driver(object):
         if len(key) != 16:
             return False
 
-        addr = addr if addr else Driver.find_bridge()
+        addr = addr if addr else self.find_bridge()
 
-        bridge_info = Driver.get_bridge_info(addr)
+        bridge_info = self.get_bridge_info(addr)
         payload = {
             "msgType": MSG_TYPES['WRITE'],
             "mac": bridge_info['mac'],
@@ -1221,8 +1217,8 @@ class Driver(object):
             "msgID": Driver.get_timestamp(),
             "data": {'operation': STATUS}
         }
-        Driver.get_socket().sendto(dumps(payload).encode(), (bridge_info['addr'], SEND_PORT))
-        data, address = Driver.get_socket().recvfrom(1024)
+        self.get_socket().sendto(dumps(payload).encode(), (bridge_info['addr'], SEND_PORT))
+        data, address = self.get_socket().recvfrom(1024)
         message = loads(data.decode('utf-8'))
         try:
             if message['actionResult'] == 'AccessToken error':
@@ -1248,8 +1244,7 @@ class Driver(object):
             Driver.__LOGGER = logger
         return Driver.__LOGGER
 
-    @staticmethod
-    def count_devices_on_bridge(addr: str = None) -> int:
+    def count_devices_on_bridge(self, addr: str = None) -> int:
         """
         Check if the given bridge has existing devices.
 
@@ -1262,8 +1257,8 @@ class Driver(object):
         Number of Devices.
         """
 
-        addr = addr if addr else Driver.find_bridge()
-        sock = Driver.get_socket()
+        addr = addr if addr else self.find_bridge()
+        sock = self.get_socket()
         address = ('', '')
         data = b''
 
@@ -1289,7 +1284,7 @@ class Driver(object):
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.bind(('', CALLBACK_PORT))
-                mreq = inet_aton(MULTICAST_GRP) + inet_aton(Driver.get_ip())
+                mreq = inet_aton(MULTICAST_GRP) + inet_aton(self.get_ip())
                 sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
                 sock.settimeout(UDP_TIMEOUT)
                 self._socket = sock
