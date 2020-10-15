@@ -1277,8 +1277,7 @@ class Driver(object):
         except timeout:
             return False
 
-    @staticmethod
-    def get_socket() -> socket:
+    def get_socket(self) -> socket:
         """
         Create UDP socket and return.
 
@@ -1286,17 +1285,17 @@ class Driver(object):
         -------
         socket instance.
         """
-        if not Driver.__SOCKET:
+        if not self._socket:
             try:
                 sock = socket(AF_INET, SOCK_DGRAM)
                 sock.bind(('', CALLBACK_PORT))
                 mreq = inet_aton(MULTICAST_GRP) + inet_aton(Driver.get_ip())
                 sock.setsockopt(IPPROTO_IP, IP_ADD_MEMBERSHIP, mreq)
                 sock.settimeout(UDP_TIMEOUT)
-                Driver.__SOCKET = sock
+                self._socket = sock
             except Exception:
                 raise
-        return Driver.__SOCKET
+        return self._socket
 
     @staticmethod
     def close_socket() -> None:
