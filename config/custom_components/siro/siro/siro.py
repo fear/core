@@ -1015,7 +1015,8 @@ class Driver(object):
     # noinspection PyTypeChecker
     def __init__(self):
         self._bridge: Bridge = None
-        self._socket: socket = self.get_socket()
+        self._socket: socket = None
+        self.get_socket()
         self._logger: Logger = self.get_logger()
         self._ipaddr: str = self.get_ip()
         self._transport = None
