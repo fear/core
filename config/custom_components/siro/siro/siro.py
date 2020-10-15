@@ -96,7 +96,7 @@ class _Device(ABC):
             self,
             mac: str,
             devicetype: str,
-            driver: Driver,
+            driver: any,
             logger: Logger = None,
             loglevel: int = None,
             loop: AbstractEventLoop = None
