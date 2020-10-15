@@ -1017,7 +1017,7 @@ class Driver(object):
         self._bridge: Bridge = None
         self._socket: socket = None
         self._logger: Logger = self.get_logger()
-        self._ipaddr: str = self.get_ip()
+        self._ipaddr: str = None
         self._transport = None
         self._listener: _SiroUDPListener = None
 
