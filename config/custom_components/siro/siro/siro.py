@@ -1066,7 +1066,7 @@ class Driver(object):
         access_token = Driver.get_access_token(key, bridge_info['token'])
         self.bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
         self.bridge.run()
-        if not self._logger:
+        if not self._listener:
             await self.start_udp_listener(loop)
         self.register_callback_on_listener(self.bridge.update_devices)
         return self.bridge
