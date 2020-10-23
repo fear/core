@@ -47,7 +47,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         loglevel=log.INFO,
         loop=hass.loop,
     )
-    driver.register_callback(bridge.update_devices)
 
     hass.data[DOMAIN][entry.entry_id] = bridge
     for component in PLATFORMS:

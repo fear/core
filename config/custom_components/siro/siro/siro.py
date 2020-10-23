@@ -1066,10 +1066,12 @@ class Driver(object):
         access_token = Driver.get_access_token(key, bridge_info['token'])
         self.bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
         self.bridge.run()
-        await self.start_udp_listener(loop)
+        if not self._logger:
+            await self.start_udp_listener(loop)
+        self.register_callback_on_listener(self.bridge.update_devices)
         return self.bridge
 
-    def register_callback(self, callback):
+    def register_callback_on_listener(self, callback):
         """
         register callback function from Listener
 
@@ -1079,7 +1081,7 @@ class Driver(object):
         """
         self._listener.register_callback(callback)
 
-    def remove_callback(self, callback):
+    def remove_callback_from_listener(self, callback):
         """
         remove callback function from Listener
 
