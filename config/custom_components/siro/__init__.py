@@ -44,7 +44,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     bridge = await driver.bridge_factory(
         key=entry.data['key'],
         addr=entry.data['bridge'],
-        loglevel=log.INFO
+        loglevel=log.INFO,
+        loop=hass.loop,
     )
     hass.data[DOMAIN][entry.entry_id] = bridge
     for component in PLATFORMS:
