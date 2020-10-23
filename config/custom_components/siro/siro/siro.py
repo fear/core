@@ -995,7 +995,6 @@ class _SiroUDPListener(DatagramProtocol):
 
 class Driver(object):
     """Driver class for holding the factories and other tools."""
-
     # noinspection PyTypeChecker
     def __init__(self):
         self._bridge: Bridge = None
@@ -1039,7 +1038,6 @@ class Driver(object):
             protocol_factory=_SiroUDPListener,
             sock=self.socket,
         )
-        self._listener.register_callback(self._bridge.update_devices)
 
     async def bridge_factory(
             self,
@@ -1070,6 +1068,26 @@ class Driver(object):
         self.bridge.run()
         await self.start_udp_listener(loop)
         return self.bridge
+
+    def register_callback(self, callback):
+        """
+        register callback function from Listener
+
+        Parameters
+        ----------
+        callback : Function which is called
+        """
+        self._listener.register_callback(callback)
+
+    def remove_callback(self, callback):
+        """
+        remove callback function from Listener
+
+        Parameters
+        ----------
+        callback : Function which is called
+        """
+        self._listener.remove_callback(callback)
 
     @staticmethod
     def device_factory(
