@@ -40,8 +40,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """
     Set up SIRO from a config entry.
     """
-    driver = Driver()
-    bridge = await driver.bridge_factory(
+
+    bridge = await Driver.bridge_factory(
+        Driver(),
         key=entry.data['key'],
         addr=entry.data['bridge'],
         loglevel=log.INFO,
