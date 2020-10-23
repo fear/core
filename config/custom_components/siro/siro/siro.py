@@ -1067,8 +1067,8 @@ class Driver(object):
         bridge_info = self.get_bridge_info(addr)
         access_token = Driver.get_access_token(key, bridge_info['token'])
         self.bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
-        await self.start_udp_listener(loop)
         self.bridge.run()
+        await self.start_udp_listener(loop)
         return self.bridge
 
     @staticmethod
