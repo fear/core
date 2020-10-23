@@ -126,6 +126,16 @@ class _Device(ABC):
         self._callbacks = set()
 
     @property
+    def driver(self) -> any:
+        """
+        Getter for driver
+        Returns
+        -------
+        Driver object
+        """
+        return self._driver
+
+    @property
     def last_update(self) -> datetime:
         return self._last_update
 
@@ -1001,13 +1011,13 @@ class Driver(object):
         self._socket: socket = None
         self._logger: Logger = self.get_logger()
         self._ipaddr: str = None
-        self._transport = None
         self._listener: _SiroUDPListener = None
+        self._transport = None
 
     @property
     def bridge(self) -> Bridge:
         """
-        Better for driver object
+        Getter for bridge object
 
         Returns
         -------
@@ -1018,7 +1028,7 @@ class Driver(object):
     @bridge.setter
     def bridge(self, bridge: Bridge) -> None:
         """
-        Setter for Driver
+        Setter for bridge object
 
         Parameters
         ----------
