@@ -370,7 +370,7 @@ class Bridge(_Device):
         self._msg_callback: dict = {}
         self.logger.info(f"Init for device {self._mac} done.")
 
-    async def run(self) -> None:
+    def run(self) -> None:
         """
         Starting the Bridge.
         """
@@ -1006,7 +1006,7 @@ class Driver(object):
         self._listener: _SiroUDPListener = None
 
     @property
-    def driver(self) -> Bridge:
+    def bridge(self) -> Bridge:
         """
         Better for driver object
 
@@ -1014,10 +1014,10 @@ class Driver(object):
         -------
         Driver
         """
-        return self.driver
+        return self._bridge
 
-    @driver.setter
-    def driver(self, bridge: Bridge) -> None:
+    @bridge.setter
+    def bridge(self, bridge: Bridge) -> None:
         """
         Setter for Driver
 
@@ -1066,9 +1066,10 @@ class Driver(object):
         """
         bridge_info = self.get_bridge_info(addr)
         access_token = Driver.get_access_token(key, bridge_info['token'])
-        new_bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
-        await new_bridge.run()
-        return new_bridge
+        self.bridge = Bridge(access_token, self, log, bridge_info['addr'], loglevel, loop, self.ip)
+        await self.start_udp_listener(loop)
+        self.bridge.run()
+        return self.bridge
 
     @staticmethod
     def device_factory(
