@@ -399,7 +399,7 @@ class Bridge(_Device):
         """
         Close socket for gentle shutdown.
         """
-        self._driver.close_socket()
+        self.driver.close_socket()
 
     @property
     def callback_address(self) -> str:
